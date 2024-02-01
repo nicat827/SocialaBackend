@@ -20,4 +20,8 @@
     <ProjectReference Include="..\..\Infrastructure\SocialaBackend.Persistence\SocialaBackend.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\users\avatars\" />
+  </ItemGroup>
+
 </Project>

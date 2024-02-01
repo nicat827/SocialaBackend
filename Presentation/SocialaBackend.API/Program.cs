@@ -1,6 +1,7 @@
 using SocialaBackend.API.Middlewares;
 using SocialaBackend.Persistence.ServiceRegistration;
 using SocialaBackend.Infrastructure.ServiceRegistration;
+using SocialaBackend.Application.ServiceRegistration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddPersistenceServices(builder.Configuration);
-builder.Services.AddInfrastructureServices();
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationServices();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

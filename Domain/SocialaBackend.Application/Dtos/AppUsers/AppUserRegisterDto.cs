@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public class UserPostDto
+    public class AppUserRegisterDto
     {
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
