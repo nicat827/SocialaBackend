@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ProniaOnion.Persistence.DAL;
 using SocialaBackend.Persistence.DAL;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
         public static void AddPersistenceServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(configuration.GetConnectionString("Default")));
+            services.AddScoped<AppDbContextInitializer>();
         }
     }
 }

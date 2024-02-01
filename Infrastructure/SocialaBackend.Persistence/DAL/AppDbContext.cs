@@ -11,7 +11,7 @@ using SocialaBackend.Persistence.Common;
 
 namespace SocialaBackend.Persistence.DAL
 {
-    internal class AppDbContext: IdentityDbContext<AppUser>
+    public class AppDbContext: IdentityDbContext<AppUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> opt) : base(opt) { }
 
