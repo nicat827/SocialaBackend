@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialaBackend.Persistence.DAL;
 
@@ -11,9 +12,10 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240201092022_AppUserUpdated")]
+    partial class AppUserUpdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -205,9 +207,10 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("RefreshToken")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("RefreshTokenExpiresAt")
+                    b.Property<DateTime>("RefreshTokenExpiresAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("SecurityStamp")

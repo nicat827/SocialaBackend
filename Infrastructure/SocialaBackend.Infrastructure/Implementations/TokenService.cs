@@ -30,7 +30,6 @@ namespace SocialaBackend.Infrastructure.Implementations
         {
             ICollection<Claim> claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.GivenName, user.Name),
                 new Claim(ClaimTypes.Surname, user.Surname),

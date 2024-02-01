@@ -20,6 +20,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
+       
 
         public UserService(IFIleService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService)
         {
@@ -28,6 +29,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _mapper = mapper;
             _tokenService = tokenService;
         }
+
+        public async Task<AppUserGetDto> GetAsync(string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
+            return _mapper.Map<AppUserGetDto>(user);
+        }
+
         public async Task<AppUserRegisterResponseDto> RegisterAsync(AppUserRegisterDto dto)
         {
             if (dto.Photo is not null)

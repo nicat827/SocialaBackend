@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialaBackend.Application.Abstractions.Services;
-using SocialaBackend.Application.Dtos.Users;
+using SocialaBackend.Application.Dtos;
 
 namespace SocialaBackend.API.Controllers
 {
@@ -15,9 +16,17 @@ namespace SocialaBackend.API.Controllers
         {
             _service = service;
         }
-        public async Task<IActionResult> Post(UserPostDto dto)
+        [HttpPost]
+        public async Task<IActionResult> Post([FromForm]AppUserRegisterDto dto)
         {
             return StatusCode(StatusCodes.Status201Created, await _service.RegisterAsync(dto));
+        }
+
+        [Authorize]
+        [HttpGet("{username}")]
+        public async Task<IActionResult> Get(string username)
+        {
+            return Ok(await _service.GetAsync(username));
         }
     }
 }

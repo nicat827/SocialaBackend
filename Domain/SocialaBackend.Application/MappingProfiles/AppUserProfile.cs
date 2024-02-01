@@ -14,6 +14,7 @@ namespace SocialaBackend.Application.MappingProfiles
         public AppUserProfile()
         {
             CreateMap<AppUserRegisterDto, AppUser>();
+            CreateMap<AppUser, AppUserGetDto>();
         }
     }
 }

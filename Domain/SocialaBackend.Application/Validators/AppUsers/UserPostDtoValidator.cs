@@ -35,7 +35,7 @@ namespace SocialaBackend.Application.Validators.Users
                 .NotEmpty().WithMessage(REQUIRED_MESS)
                 .MaximumLength(100).WithMessage(MAXLENGTH_MESS)
                 .MinimumLength(8).WithMessage(MINLENGTH_MESS)
-                .Matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$").WithMessage("The password must contain at least one letter, one digit, and one uppercase letter!");
+                .Matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#. ,?&]{8,}$").WithMessage("The password must contain at least one letter, one digit, and one uppercase letter!");
         }
     }
 }

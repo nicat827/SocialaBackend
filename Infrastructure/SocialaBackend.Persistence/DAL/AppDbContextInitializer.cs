@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
@@ -32,7 +33,7 @@ namespace ProniaOnion.Persistence.DAL
         }
         public async Task InitializeDbAsync()
         {
-            await _context.Database.EnsureCreatedAsync();
+            await _context.Database.MigrateAsync();
         }
         public async Task CreateRolesAsync()
         {
@@ -54,11 +55,23 @@ namespace ProniaOnion.Persistence.DAL
             {
                 Name = "admin",
                 Surname = "admin",
-                Email = _configuration["AdminSettings:Email"],
                 UserName = _configuration["AdminSettings:UserName"],
             };
-            await _userManager.CreateAsync(user, _configuration["AdminSettings:Password"]);
-            await _userManager.AddToRoleAsync(user, UserRole.Admin.ToString());
+            var res  = await _userManager.CreateAsync(user, _configuration["AdminSettings:Password"]);
+            if (!res.Succeeded)
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (var err in res.Errors)
+                {
+                    sb.AppendLine(err.ToString());
+                }
+                Console.WriteLine(sb.ToString());
+            }
+            else
+            {
+                await _userManager.AddToRoleAsync(user, UserRole.Admin.ToString());
+
+            }
         }
     }
 }

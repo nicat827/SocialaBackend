@@ -10,5 +10,7 @@ namespace SocialaBackend.Application.Abstractions.Services
     public interface IUserService
     {
         Task<AppUserRegisterResponseDto> RegisterAsync(AppUserRegisterDto dto);
+
+        Task<AppUserGetDto> GetAsync(string username);
     }
 }

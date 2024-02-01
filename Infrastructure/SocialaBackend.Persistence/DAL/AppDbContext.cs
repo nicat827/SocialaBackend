@@ -23,7 +23,7 @@ namespace SocialaBackend.Persistence.DAL
             base.OnModelCreating(builder);
         }
 
-        public override int SaveChanges()
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var entities = ChangeTracker.Entries<BaseEntity>();
             foreach (var data in entities)
@@ -40,7 +40,8 @@ namespace SocialaBackend.Persistence.DAL
 
                 }
             }
-            return base.SaveChanges();
+            return base.SaveChangesAsync(cancellationToken);
         }
+
     }
 }
