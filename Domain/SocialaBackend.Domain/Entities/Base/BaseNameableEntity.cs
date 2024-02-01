@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Domain.Entities.Base
 {
-    internal abstract class BaseNameableEntity:BaseEntity
+    public abstract class BaseNameableEntity:BaseEntity
     {
         public string Name { get; set; } = null!;
     }
