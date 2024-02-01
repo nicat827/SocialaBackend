@@ -1,4 +1,6 @@
+using SocialaBackend.API.Middlewares;
 using SocialaBackend.Persistence.ServiceRegistration;
+using SocialaBackend.Infrastructure.ServiceRegistration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddInfrastructureServices();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -17,7 +20,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
