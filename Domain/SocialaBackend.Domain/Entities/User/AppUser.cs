@@ -14,6 +14,6 @@ namespace SocialaBackend.Domain.Entities.User
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
 
-        public IFormFile? Photo { get; set; }
+        public string? ImageUrl { get; set; } 
     }
 }
