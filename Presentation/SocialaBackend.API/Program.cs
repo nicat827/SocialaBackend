@@ -12,6 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
+{
+    build.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader();
+}));
 builder.Services.AddSwaggerGen(opt =>
 {
     opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
@@ -52,12 +56,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.UseCors("corspolicy");
+
 using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<AppDbContextInitializer>();
-    await initializer.InitializeDbAsync();
-    await initializer.CreateRolesAsync();
-    await initializer.CreateAdminAsync();
+    initializer.InitializeDbAsync().Wait();
+    initializer.CreateRolesAsync().Wait();
+    initializer.CreateAdminAsync().Wait();
 }
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();

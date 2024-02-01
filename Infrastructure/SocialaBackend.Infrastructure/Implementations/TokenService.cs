@@ -55,6 +55,7 @@ namespace SocialaBackend.Infrastructure.Implementations
             );
 
             string refreshToken = Guid.NewGuid().ToString();
+            
             string accessToken = tokenHandler.WriteToken(token);
             return new TokenResponseDto(
                 accessToken,

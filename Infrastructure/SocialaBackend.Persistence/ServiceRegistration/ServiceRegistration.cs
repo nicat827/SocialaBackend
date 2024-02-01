@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProniaOnion.Persistence.DAL;
+using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Persistence.DAL;
+using SocialaBackend.Persistence.Implementations.Repositories;
 using SocialaBackend.Persistence.Implementations.Services;
 using System;
 using System.Collections.Generic;
@@ -31,8 +33,12 @@ namespace SocialaBackend.Persistence.ServiceRegistration
 
             }).AddDefaultTokenProviders().AddEntityFrameworkStores<AppDbContext>();
 
+
+            //repos
+            services.AddScoped<IPostRepository, PostRepository>();
             //services
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IPostService, PostService>();
             services.AddScoped<AppDbContextInitializer>();
         }
     }

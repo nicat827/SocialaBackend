@@ -6,6 +6,7 @@ using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.AppUsers;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Application.Exceptions.AppUser;
+using SocialaBackend.Application.Exceptions.Token;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using System;
@@ -52,11 +53,34 @@ namespace SocialaBackend.Persistence.Implementations.Services
             
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
             user.RefreshToken = tokens.RefreshToken;
-            user.RefreshTokenExpiresAt = tokens.RefreshTokeExpiresAt;
+            user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(user);
             return new AppUserLoginResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken);
 
 
+        }
+
+        public async Task LogoutAsync(string refreshToken)
+        {
+            AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
+                                                                        && u.RefreshTokenExpiresAt > DateTime.UtcNow);
+            if (user is not null)
+            {
+                user.RefreshToken = null;
+                user.RefreshTokenExpiresAt = null;
+            }
+        }
+
+        public async Task<TokenResponseDto> RefreshAsync(string refreshToken)
+        {
+            AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
+                                                                        && u.RefreshTokenExpiresAt > DateTime.UtcNow);
+            if (user is null) throw new InvalidTokenException("Token is not valid!");
+            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
+            user.RefreshToken = tokens.RefreshToken;
+            user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
+            await _userManager.UpdateAsync(user);
+            return tokens;
         }
 
         public async Task<AppUserRegisterResponseDto> RegisterAsync(AppUserRegisterDto dto)
@@ -84,7 +108,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(newUser, 15);
             newUser.RefreshToken = tokens.RefreshToken;
-            newUser.RefreshTokenExpiresAt = tokens.RefreshTokeExpiresAt;
+            newUser.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(newUser);
             return new AppUserRegisterResponseDto(newUser.UserName, tokens.AccessToken, tokens.RefreshToken);
         }
