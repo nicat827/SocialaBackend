@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
+using SocialaBackend.Application.Dtos.AppUsers;
 using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Application.Exceptions.AppUser;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using System;
@@ -35,6 +37,26 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser user = await _userManager.FindByNameAsync(username);
             if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
             return _mapper.Map<AppUserGetDto>(user);
+        }
+
+        public async Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto)
+        {
+            AppUser user = await _userManager.FindByNameAsync(dto.UsernameOrEmail);
+            if (user is null)
+            {
+                user = await _userManager.FindByEmailAsync(dto.UsernameOrEmail);
+                if (user is null) throw new AppUserNotFoundException("Username, email or password is incorrect!", 400);
+            }
+            if (await _userManager.IsLockedOutAsync(user)) throw new AppUserLockoutException("Too many failure attempts! Try later!");
+            if (!await _userManager.CheckPasswordAsync(user, dto.Password)) throw new WrongPasswordException("Username, email or password is incorrect!");
+            
+            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
+            user.RefreshToken = tokens.RefreshToken;
+            user.RefreshTokenExpiresAt = tokens.RefreshTokeExpiresAt;
+            await _userManager.UpdateAsync(user);
+            return new AppUserLoginResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken);
+
+
         }
 
         public async Task<AppUserRegisterResponseDto> RegisterAsync(AppUserRegisterDto dto)
