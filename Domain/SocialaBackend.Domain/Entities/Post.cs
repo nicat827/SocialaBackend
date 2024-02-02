@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Domain.Entities
 {
-    public class Post:BaseNameableEntity
+    public class Post:BaseEntity
     {
         public string SourceUrl { get; set; } = null!;
         public string? Description { get; set; }

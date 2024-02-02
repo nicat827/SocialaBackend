@@ -19,7 +19,7 @@ namespace SocialaBackend.API.Controllers
             _service = service;
         }
         [HttpPost]
-        public async Task<IActionResult> Post(PostPostDto dto)
+        public async Task<IActionResult> Post([FromForm]PostPostDto dto)
         {
 
             await _service.CreatePostAsync(User.Identity?.Name, dto);

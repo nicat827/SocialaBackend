@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.Base;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Persistence.Common;
@@ -15,6 +16,11 @@ namespace SocialaBackend.Persistence.DAL
     {
         public AppDbContext(DbContextOptions<AppDbContext> opt) : base(opt) { }
 
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<Reply> Replies { get; set; }
+        public DbSet<PostLikeItem> PostLikeItems { get; set; }
+        public DbSet<CommentLikeItem> CommentLikeItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -30,12 +36,8 @@ namespace SocialaBackend.Persistence.DAL
             {
                 switch (data.State)
                 {
-                    case EntityState.Modified:
-                        data.Entity.LastUpdatedAt = DateTime.UtcNow;
-                        break;
                     case EntityState.Added:
                         data.Entity.CreatedAt = DateTime.UtcNow;
-                        data.Entity.CreatedBy = "Admin";
                         break;
 
                 }

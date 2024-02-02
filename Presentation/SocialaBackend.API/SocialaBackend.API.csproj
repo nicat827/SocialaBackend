@@ -22,6 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\uploads\posts\images\" />
+    <Folder Include="wwwroot\uploads\posts\videos\" />
     <Folder Include="wwwroot\uploads\users\avatars\" />
   </ItemGroup>
 
