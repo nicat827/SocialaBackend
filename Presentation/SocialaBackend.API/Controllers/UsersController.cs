@@ -2,11 +2,14 @@
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.AppUsers;
 using SocialaBackend.Application.Exceptions.Token;
+using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace SocialaBackend.API.Controllers
 {
@@ -27,34 +30,33 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> Post([FromForm]AppUserRegisterDto dto)
         {
             AppUserRegisterResponseDto res = await _service.RegisterAsync(dto);
-            HttpContext.Response.Cookies.Append("refreshToken", JsonConvert.SerializeObject(res.RefreshToken));
             return StatusCode(StatusCodes.Status201Created, res);
         }
         [HttpPost("auth/login")]
 
-        public async Task<IActionResult> Post([FromForm] AppUserLoginDto dto)
+        public async Task<IActionResult> Post([FromForm]AppUserLoginDto dto)
         {
             AppUserLoginResponseDto res = await _service.LoginAsync(dto);
-            HttpContext.Response.Cookies.Append("refreshToken", JsonConvert.SerializeObject(res.RefreshToken));
             return StatusCode(StatusCodes.Status200OK, res);
-        }
-        [HttpPost("auth/refresh")]
-        [Authorize]
-        public async Task<IActionResult> Post()
-        {
-            if (HttpContext.Request.Cookies["refreshToken"] is null) throw new InvalidTokenException("Refresh token is null!");
-            string refreshToken = JsonConvert.DeserializeObject<string>(HttpContext.Request.Cookies["refreshToken"]);
-            TokenResponseDto res = await _service.RefreshAsync(refreshToken);
-            HttpContext.Response.Cookies.Append("refreshToken", JsonConvert.SerializeObject(res.RefreshToken));
-            return Ok(res);
         }
 
         [Authorize]
-        [HttpPost("auth/logout")]
-        public async Task<IActionResult> Logout()
+        [HttpGet("auth")]
+
+        public async Task<IActionResult> Get()
         {
-            if (HttpContext.Request.Cookies["refreshToken"] is null) throw new InvalidTokenException("Refresh token is null!");
-            string refreshToken = JsonConvert.DeserializeObject<string>(HttpContext.Request.Cookies["refreshToken"]);
+            return Ok(await _service.GetAsync(User.Identity.Name));
+        }
+        [HttpPost("auth/refresh/{refreshToken}")]
+        public async Task<IActionResult> Post(string refreshToken)
+        {
+            TokenResponseDto res = await _service.RefreshAsync(refreshToken);
+            return Ok(res);
+        }
+        [Authorize]
+        [HttpPost("auth/logout/{refreshToken}")]
+        public async Task<IActionResult> Logout(string refreshToken)
+        {
             await _service.LogoutAsync(refreshToken);
             return Ok();
         }

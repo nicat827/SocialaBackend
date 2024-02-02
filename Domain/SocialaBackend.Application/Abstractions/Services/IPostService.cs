@@ -10,5 +10,7 @@ namespace SocialaBackend.Application.Abstractions.Services
     public interface IPostService
     {
         Task CreatePostAsync(string username, PostPostDto dto);
+
+        Task<ICollection<PostGetDto>> GetPostsAsync(string username);
     }
 }

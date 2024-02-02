@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.Base;
 using SocialaBackend.Domain.Entities.User;
 using System;
@@ -15,10 +16,15 @@ namespace SocialaBackend.Persistence.Common
         {
             builder.Entity<T>().HasQueryFilter(x => x.IsDeleted == false);
         }
+      
 
         public static void ApplyQueryFilters(this ModelBuilder builder)
         {
-
+            builder.ApplyFilter<Comment>();
+            builder.ApplyFilter<Post>();
+            builder.ApplyFilter<PostLikeItem>();
+            builder.ApplyFilter<CommentLikeItem>();
+            builder.ApplyFilter<Reply>();
         }
     }
 }

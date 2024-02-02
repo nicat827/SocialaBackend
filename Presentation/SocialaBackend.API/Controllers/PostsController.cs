@@ -25,5 +25,13 @@ namespace SocialaBackend.API.Controllers
             await _service.CreatePostAsync(User.Identity?.Name, dto);
             return StatusCode(StatusCodes.Status201Created);
         }
+
+        [HttpGet("{username}")]
+
+        public async Task<IActionResult> Get(string username)
+        {
+            return Ok(await _service.GetPostsAsync(username));
+        }
+
     }
 }

@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record  AppUserRegisterResponseDto(string Username, string AccessToken, string RefreshToken);
+    public record  AppUserRegisterResponseDto(string Username, string AccessToken, string RefreshToken, DateTime ExpiresAt);
     
 }

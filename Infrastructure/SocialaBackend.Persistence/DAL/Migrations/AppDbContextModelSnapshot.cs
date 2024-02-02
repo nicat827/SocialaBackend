@@ -195,7 +195,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("CommentId")
+                    b.Property<int?>("CommentId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -222,11 +222,8 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
                     b.Property<string>("AppUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ApppUserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -266,7 +263,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int>("PostId")
+                    b.Property<int?>("PostId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -460,9 +457,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasOne("SocialaBackend.Domain.Entities.Comment", "Comment")
                         .WithMany("Likes")
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CommentId");
 
                     b.Navigation("AppUser");
 
@@ -472,8 +467,10 @@ namespace SocialaBackend.Persistence.DAL.Migrations
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Post", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
-                        .WithMany()
-                        .HasForeignKey("AppUserId");
+                        .WithMany("Posts")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("AppUser");
                 });
@@ -488,9 +485,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasOne("SocialaBackend.Domain.Entities.Post", "Post")
                         .WithMany("Likes")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PostId");
 
                     b.Navigation("AppUser");
 
@@ -520,6 +515,11 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>
+                {
+                    b.Navigation("Posts");
                 });
 #pragma warning restore 612, 618
         }

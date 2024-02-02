@@ -25,7 +25,7 @@ namespace SocialaBackend.Persistence.DAL
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyQueryFilters();
-
+            
             base.OnModelCreating(builder);
         }
 

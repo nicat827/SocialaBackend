@@ -10,11 +10,13 @@ namespace SocialaBackend.Domain.Entities
 {
     public class PostLikeItem:BaseEntity
     {
-        public int PostId { get; set; }
-
-        public Post Post { get; set; } = null!;
         public string AppUserId { get; set; } = null!;
 
         public AppUser AppUser { get; set; } = null!;
+
+        public int? PostId { get; set; }
+
+        public Post? Post { get; set; } = null!;
+       
     }
 }

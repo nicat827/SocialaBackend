@@ -13,9 +13,9 @@ namespace SocialaBackend.Domain.Entities
         //relational 
         public int PostId { get; set; }
 
-        public ICollection<CommentLikeItem>? Likes { get; set; }
+        public ICollection<CommentLikeItem> Likes { get; set; } = new List<CommentLikeItem>();
 
         public Post Post { get; set; } = null!;
-        public ICollection<Reply>? Replies { get; set; }
+        public ICollection<Reply> Replies { get; set; } = new List<Reply>();
     }
 }

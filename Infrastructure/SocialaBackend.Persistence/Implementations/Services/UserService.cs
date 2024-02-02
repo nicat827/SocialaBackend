@@ -55,7 +55,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             user.RefreshToken = tokens.RefreshToken;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(user);
-            return new AppUserLoginResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken);
+            return new AppUserLoginResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
 
 
         }
@@ -110,7 +110,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             newUser.RefreshToken = tokens.RefreshToken;
             newUser.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(newUser);
-            return new AppUserRegisterResponseDto(newUser.UserName, tokens.AccessToken, tokens.RefreshToken);
+            return new AppUserRegisterResponseDto(newUser.UserName, tokens.AccessToken, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
         }
 
     }
