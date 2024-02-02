@@ -13,6 +13,8 @@ namespace SocialaBackend.Application.Abstractions.Services
     {
         void CheckFileType(IFormFile file, FileType type);
         void CheckFileSize(IFormFile file, int maxSize, FileSize type = FileSize.Mb);
+        void ValidateFilesForPost(IFormFile file);
+        
         Task<string> CreateFileAsync(IFormFile file, params string[] folders);
         void DeleteFile(string fileName, params string[] folders);
     }

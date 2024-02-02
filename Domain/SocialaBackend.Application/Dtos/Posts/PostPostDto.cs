@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record PostPostDto(string? Description, IFormFile File);
+    public record PostPostDto(string? Description, ICollection<IFormFile> Files);
    
 }

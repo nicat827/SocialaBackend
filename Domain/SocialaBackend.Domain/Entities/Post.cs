@@ -10,11 +10,11 @@ namespace SocialaBackend.Domain.Entities
 {
     public class Post:BaseEntity
     {
-        public string SourceUrl { get; set; } = null!;
         public string? Description { get; set; }
 
         //relational
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public ICollection<PostItem> PostItems { get; set; } = new List<PostItem>();
         public ICollection<PostLikeItem> Likes { get; set; } = new List<PostLikeItem>();
         public string AppUserId { get; set; } = null!;
         public AppUser AppUser { get; set; } = null!;

@@ -234,15 +234,39 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.PostItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
                     b.Property<string>("SourceUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId");
+                    b.HasIndex("PostId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("PostItem");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.PostLikeItem", b =>
@@ -475,6 +499,17 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.PostItem", b =>
+                {
+                    b.HasOne("SocialaBackend.Domain.Entities.Post", "Post")
+                        .WithMany("PostItems")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+                });
+
             modelBuilder.Entity("SocialaBackend.Domain.Entities.PostLikeItem", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
@@ -515,6 +550,8 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+
+                    b.Navigation("PostItems");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>

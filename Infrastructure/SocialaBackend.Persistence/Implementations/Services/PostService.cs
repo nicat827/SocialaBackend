@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
@@ -32,21 +33,26 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task CreatePostAsync(string username , PostPostDto dto)
         {
             AppUser user = await _getUser(username);
-            _fileService.CheckFileSize(dto.File, 5);
-
-            string type = dto.File.ContentType.Substring(0, dto.File.ContentType.IndexOf("/"));
-            Console.WriteLine(type);
             Post newPost = new Post
             {
                 Description = dto.Description,
-                SourceUrl = await _fileService.CreateFileAsync(dto.File, "uploads", "posts", $"{type}s"),
+                PostItems = new List<PostItem>(),
                 AppUserId = user.Id
             };
+            foreach (var file in dto.Files)
+            {
+                _fileService.CheckFileSize(file, 15);
+                _fileService.ValidateFilesForPost(file);
+                string type = file.ContentType.Substring(0, file.ContentType.IndexOf("/"));
+                newPost.PostItems.Add(new PostItem { SourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s") });
+            }
 
             await _repository.CreateAsync(newPost);
             await _repository.SaveChangesAsync();
 
         }
+
+       
 
         public async Task<ICollection<PostGetDto>> GetPostsAsync(string username)
         {
@@ -60,6 +66,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         .ThenInclude(c => c.Replies)
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Likes)
+                .Include(u => u.Posts)
+                    .ThenInclude(p => p.PostItems)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
             ICollection<PostGetDto> dto = _mapper.Map<ICollection<PostGetDto>>(user.Posts);

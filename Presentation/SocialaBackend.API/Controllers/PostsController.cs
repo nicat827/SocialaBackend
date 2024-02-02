@@ -27,11 +27,11 @@ namespace SocialaBackend.API.Controllers
         }
 
         [HttpGet("{username}")]
-
         public async Task<IActionResult> Get(string username)
         {
             return Ok(await _service.GetPostsAsync(username));
         }
+
 
     }
 }
