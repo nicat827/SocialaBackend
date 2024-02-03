@@ -14,10 +14,10 @@ namespace SocialaBackend.Domain.Entities
         public string? ImageUrl { get; set; }
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
-        public string AppUserId { get; set; } = null!;
-        public AppUser AppUser { get; set; } = null!;
-        public int? PostId { get; set; }
-        public Post? Post { get; set; } = null!;
+        public string? AppUserId { get; set; } = null!;
+        public AppUser? AppUser { get; set; }
+        public int PostId { get; set; }
+        public Post Post { get; set; } = null!;
        
     }
 }

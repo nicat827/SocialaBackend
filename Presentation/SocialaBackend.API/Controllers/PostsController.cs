@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
+using SocialaBackend.Application.Exceptions;
 using System.Runtime.CompilerServices;
 
 namespace SocialaBackend.API.Controllers
@@ -18,7 +19,7 @@ namespace SocialaBackend.API.Controllers
         {
             _service = service;
         }
-        [HttpPost]
+        [HttpPost()]
         public async Task<IActionResult> Post([FromForm]PostPostDto dto)
         {
 
@@ -36,8 +37,19 @@ namespace SocialaBackend.API.Controllers
         [Authorize]
         public async Task<IActionResult> Post(int id, string text)
         {
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
             await _service.CommentAsync(id, text, User.Identity?.Name);
             return StatusCode(StatusCodes.Status201Created);
+
+        }
+
+        [HttpGet("{id}/comments")]
+        [Authorize]
+        public async Task<IActionResult> GetComments(int id, int? skip = null)
+        {
+            if (skip < 0) throw new InvalidSkipException($"Invalid skip: {skip}!");
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            return Ok(await _service.GetCommentsAsync(id, skip));
 
         }
 
@@ -45,7 +57,30 @@ namespace SocialaBackend.API.Controllers
         [Authorize]
         public async Task<IActionResult> Post(int id)
         {
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
             await _service.LikePostAsync(id,  User.Identity?.Name);
+            return NoContent();
+
+        }
+
+        [HttpGet("{id}/likes")]
+        [Authorize]
+        public async Task<IActionResult> Get(int id, int? skip= null)
+        {
+            if (skip < 0) throw new InvalidSkipException($"Invalid skip: {skip}!");
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            return Ok(await _service.GetLikesAsync(id, skip));
+
+        }
+
+
+
+        [HttpPost("{id}/reply")]
+        [Authorize]
+        public async Task<IActionResult> Reply(int id)
+        {
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.LikePostAsync(id, User.Identity?.Name);
             return NoContent();
 
         }

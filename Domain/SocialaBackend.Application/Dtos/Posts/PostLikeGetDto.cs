@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record PostLikeGetDto(string Username, string Name, string Surname, string? ImageUrl);
+    public record PostLikeGetDto(int Id, string Username, string Name, string Surname, string? ImageUrl);
     
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -26,7 +27,12 @@ namespace SocialaBackend.Persistence.DAL
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyQueryFilters();
-            
+            builder.Entity<PostLikeItem>()
+            .HasOne(c => c.Post)
+            .WithMany(p => p.Likes)
+            .HasForeignKey(p => p.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
             base.OnModelCreating(builder);
         }
 
