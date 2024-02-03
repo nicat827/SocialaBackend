@@ -40,6 +40,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return _mapper.Map<AppUserGetDto>(user);
         }
 
+        public async Task<CurrentAppUserGetDto> GetCurrentUserAsync(string username)
+        {
+            AppUser? user = await _userManager.Users.Include(u => u.LikedPosts).ThenInclude(lp => lp.Post).Include(u => u.LikedComments).ThenInclude(lc => lc.Comment).FirstOrDefaultAsync(u => u.UserName == username);
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
+            CurrentAppUserGetDto dto =  _mapper.Map<CurrentAppUserGetDto>(user);
+            dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
+            return dto;
+        }
+
         public async Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto)
         {
             AppUser user = await _userManager.FindByNameAsync(dto.UsernameOrEmail);

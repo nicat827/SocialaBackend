@@ -53,6 +53,26 @@ namespace SocialaBackend.API.Controllers
 
         }
 
+        [HttpPost("comment/{id}/reply")]
+        [Authorize]
+        public async Task<IActionResult> Reply(int id, string text)
+        {
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.ReplyCommentAsync(id, text, User.Identity.Name);
+            return StatusCode(StatusCodes.Status201Created);
+
+        }
+
+        [HttpPost("comment/{id}/like")]
+        [Authorize]
+        public async Task<IActionResult> LikeComment(int id)
+        {
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.LikeCommentAsync(id, User.Identity?.Name);
+            return NoContent();
+
+        }
+
         [HttpPost("{id}/like")]
         [Authorize]
         public async Task<IActionResult> Post(int id)
@@ -73,16 +93,5 @@ namespace SocialaBackend.API.Controllers
 
         }
 
-
-
-        [HttpPost("{id}/reply")]
-        [Authorize]
-        public async Task<IActionResult> Reply(int id)
-        {
-            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.LikePostAsync(id, User.Identity?.Name);
-            return NoContent();
-
-        }
     }
 }

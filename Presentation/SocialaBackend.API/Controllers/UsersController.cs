@@ -45,7 +45,7 @@ namespace SocialaBackend.API.Controllers
 
         public async Task<IActionResult> Get()
         {
-            return Ok(await _service.GetAsync(User.Identity.Name));
+            return Ok(await _service.GetCurrentUserAsync(User.Identity.Name));
         }
         [HttpPost("auth/refresh/{refreshToken}")]
         public async Task<IActionResult> Post(string refreshToken)

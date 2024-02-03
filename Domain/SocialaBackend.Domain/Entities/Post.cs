@@ -18,7 +18,6 @@ namespace SocialaBackend.Domain.Entities
 
         public ICollection<PostItem> Items { get; set; } = new List<PostItem>();
         public ICollection<PostLikeItem> Likes { get; set; } = new List<PostLikeItem>();
-
         public int LikesCount { get; set; }
         public string AppUserId { get; set; } = null!;
         public AppUser AppUser { get; set; } = null!;

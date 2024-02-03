@@ -58,6 +58,55 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         }
 
+        public async Task LikeCommentAsync(int id, string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException("User wasnt found!");
+            Comment comment = await _commentRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
+            if (comment is null) throw new NotFoundException("Comment didnt found!");
+
+            CommentLikeItem? likedItem = comment.Likes.FirstOrDefault(li => li.AppUserId == user.Id);
+            if (likedItem is null)
+            {
+                comment.Likes.Add(new CommentLikeItem { AppUserId = user.Id });
+                comment.LikesCount++;
+            }
+            else
+            {
+                comment.Likes.Remove(likedItem);
+                comment.LikesCount--;
+
+            }
+            await _repository.SaveChangesAsync();
+        }
+            public async Task ReplyCommentAsync(int id, string text, string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException("User wasnt found!");
+            Comment? comment = await _commentRepository.GetByIdAsync(id,true,false,"Replies");
+            if (comment is null) throw new NotFoundException("Comment didnt found!");
+            comment.Replies.Add(new Reply
+            {
+                Text = text,
+                AuthorImageUrl = user.ImageUrl,
+                Author = user.UserName
+            });
+          
+            //comment.RepliesCount++;
+            await _commentRepository.SaveChangesAsync();
+
+        }
+        // надо доработать
+        public async Task<IEnumerable<CommentGetDto>> GetRepliesAsync(int id, int? skip)
+        {
+            if (skip is null) skip = 0;
+            Post? post = await _postRepository.GetPostByIdWithExpersionIncludes(id, p => p.Comments.Skip((int)skip).Take(10));
+            if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
+            return _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments);
+
+        }
+
+
         public async Task CreatePostAsync(string username , PostPostDto dto)
         {
             AppUser user = await _getUser(username);

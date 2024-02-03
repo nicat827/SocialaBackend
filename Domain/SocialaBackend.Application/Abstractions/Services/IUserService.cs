@@ -19,5 +19,6 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task LogoutAsync(string refreshToken);
 
         Task<AppUserGetDto> GetAsync(string username);
+        Task<CurrentAppUserGetDto> GetCurrentUserAsync(string username);
     }
 }

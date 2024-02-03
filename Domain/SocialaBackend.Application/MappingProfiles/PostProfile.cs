@@ -16,6 +16,7 @@ namespace SocialaBackend.Application.MappingProfiles
             CreateMap<Post, PostGetDto>();
             CreateMap<PostItem, PostItemGetDto>();
             CreateMap<PostLikeItem, PostLikeGetDto>();
+            CreateMap<PostLikeItem, AppUserLikesGetDto>();
         }
     }
 }
