@@ -32,6 +32,13 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.GetPostsAsync(username));
         }
 
+        [HttpPost("{id}/comment")]
+        [Authorize]
+        public async Task<IActionResult> Post(int id, string text)
+        {
+            await _service.CommentAsync(id, text, User.Identity?.Name);
+            return StatusCode(StatusCodes.Status201Created);
 
+        }
     }
 }

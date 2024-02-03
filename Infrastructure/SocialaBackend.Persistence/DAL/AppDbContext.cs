@@ -21,6 +21,7 @@ namespace SocialaBackend.Persistence.DAL
         public DbSet<Reply> Replies { get; set; }
         public DbSet<PostLikeItem> PostLikeItems { get; set; }
         public DbSet<CommentLikeItem> CommentLikeItems { get; set; }
+        public DbSet<PostItem> PostItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

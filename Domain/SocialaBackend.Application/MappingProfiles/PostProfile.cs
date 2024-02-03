@@ -14,6 +14,7 @@ namespace SocialaBackend.Application.MappingProfiles
         public PostProfile()
         {
             CreateMap<Post, PostGetDto>();
+            CreateMap<PostItem, PostItemGetDto>();
         }
     }
 }

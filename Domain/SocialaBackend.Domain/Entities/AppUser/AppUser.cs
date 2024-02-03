@@ -20,6 +20,6 @@ namespace SocialaBackend.Domain.Entities.User
         public DateTime? RefreshTokenExpiresAt { get; set; }
 
         //relational
-        public ICollection<Post> Posts { get; set; }
+        public ICollection<Post> Posts { get; set; } = new List<Post>();
     }
 }

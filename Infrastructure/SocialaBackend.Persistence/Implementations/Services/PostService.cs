@@ -22,21 +22,48 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IFIleService _fileService;
         private readonly IPostRepository _repository;
         private readonly IMapper _mapper;
+        private readonly ICommentRepository _commentRepository;
+        private readonly IPostRepository _postRepository;
 
-        public PostService(UserManager<AppUser> userManager, IFIleService fileService, IPostRepository repository, IMapper mapper)
+        public PostService(UserManager<AppUser> userManager,
+            IFIleService fileService,
+            IPostRepository repository,
+            IMapper mapper,
+            ICommentRepository commentRepository,
+            IPostRepository postRepository)
         {
             _userManager = userManager;
             _fileService = fileService;
             _repository = repository;
             _mapper = mapper;
+            _commentRepository = commentRepository;
+            _postRepository = postRepository;
         }
+
+        public async Task CommentAsync(int id, string text, string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException("User wasnt found!");
+            Post post = await _postRepository.GetByIdAsync(id,isTracking:true, includes:"Comments");
+            if (post is null) throw new NotFoundException("Post didnt found!");
+
+            post.Comments.Add(new Comment
+            {
+                Text = text,
+                AuthorImageUrl = user.ImageUrl,
+                Author = user.UserName
+            });
+            await _postRepository.SaveChangesAsync();
+
+        }
+
         public async Task CreatePostAsync(string username , PostPostDto dto)
         {
             AppUser user = await _getUser(username);
             Post newPost = new Post
             {
                 Description = dto.Description,
-                PostItems = new List<PostItem>(),
+                Items = new List<PostItem>(),
                 AppUserId = user.Id
             };
             foreach (var file in dto.Files)
@@ -44,7 +71,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 _fileService.CheckFileSize(file, 15);
                 _fileService.ValidateFilesForPost(file);
                 string type = file.ContentType.Substring(0, file.ContentType.IndexOf("/"));
-                newPost.PostItems.Add(new PostItem { SourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s") });
+                newPost.Items.Add(new PostItem { SourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s") });
             }
 
             await _repository.CreateAsync(newPost);
@@ -67,7 +94,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Likes)
                 .Include(u => u.Posts)
-                    .ThenInclude(p => p.PostItems)
+                    .ThenInclude(p => p.Items)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
             ICollection<PostGetDto> dto = _mapper.Map<ICollection<PostGetDto>>(user.Posts);

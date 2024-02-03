@@ -163,6 +163,13 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AuthorImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -266,7 +273,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("PostItem");
+                    b.ToTable("PostItems");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.PostLikeItem", b =>
@@ -502,7 +509,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
             modelBuilder.Entity("SocialaBackend.Domain.Entities.PostItem", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.Post", "Post")
-                        .WithMany("PostItems")
+                        .WithMany("Items")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -549,9 +556,9 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("Likes");
+                    b.Navigation("Items");
 
-                    b.Navigation("PostItems");
+                    b.Navigation("Likes");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>
