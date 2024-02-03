@@ -13,6 +13,8 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         Task<ICollection<PostGetDto>> GetPostsAsync(string username);
 
+        Task LikePostAsync(int id, string username);
+
         Task CommentAsync(int id, string text, string username);
     }
 }

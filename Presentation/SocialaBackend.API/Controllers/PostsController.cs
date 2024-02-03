@@ -40,5 +40,14 @@ namespace SocialaBackend.API.Controllers
             return StatusCode(StatusCodes.Status201Created);
 
         }
+
+        [HttpPost("{id}/like")]
+        [Authorize]
+        public async Task<IActionResult> Post(int id)
+        {
+            await _service.LikePostAsync(id,  User.Identity?.Name);
+            return NoContent();
+
+        }
     }
 }

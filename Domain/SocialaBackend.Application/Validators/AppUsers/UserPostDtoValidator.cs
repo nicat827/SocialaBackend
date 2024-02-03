@@ -28,8 +28,8 @@ namespace SocialaBackend.Application.Validators.Users
                 .Matches("^[a-zA-Z]+$").WithMessage(REGEX_MESS);
             RuleFor(a => a.Username)
                 .NotEmpty().WithMessage(REQUIRED_MESS)
-                .MaximumLength(100).WithMessage(MAXLENGTH_MESS)
-                .MinimumLength(4).WithMessage(MINLENGTH_MESS)
+                .MaximumLength(20).WithMessage(MAXLENGTH_MESS)
+                .MinimumLength(5).WithMessage(MINLENGTH_MESS)
                 .Matches("^[a-zA-Z0-9]+$").WithMessage(REGEX_MESS + " or digits!");
             RuleFor(a => a.Password)
                 .NotEmpty().WithMessage(REQUIRED_MESS)

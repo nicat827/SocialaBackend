@@ -102,6 +102,23 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         }
 
+        public async Task LikePostAsync(int id, string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException("User wasnt found!");
+            Post post = await _postRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
+            if (post is null) throw new NotFoundException("Post didnt found!");
+
+            PostLikeItem? likedItem = post.Likes.FirstOrDefault(li => li.AppUserId == user.Id);
+            if (likedItem is null)
+            {
+                post.Likes.Add(new PostLikeItem {AppUserId = user.Id, Username =user.UserName, ImageUrl = user.ImageUrl, Name = user.Name, Surname = user.Surname });
+
+            }
+            else post.Likes.Remove(likedItem);
+            await _repository.SaveChangesAsync();
+        }
+
         private async Task<AppUser> _getUser(string username)
         {
             AppUser user = await _userManager.FindByNameAsync(username);
