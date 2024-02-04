@@ -20,5 +20,11 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         Task<AppUserGetDto> GetAsync(string username);
         Task<CurrentAppUserGetDto> GetCurrentUserAsync(string username);
+
+        //follow methods
+        Task FollowAsync(string followerUsername, string followToUsername);
+
+
     }
+
 }

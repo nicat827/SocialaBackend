@@ -15,11 +15,15 @@ namespace SocialaBackend.Domain.Entities.User
         public string Surname { get; set; } = null!;
         public string? ImageUrl { get; set; }
 
+        public bool IsPrivate { get; set; }
+
         public string? RefreshToken { get; set; } = null!;
 
         public DateTime? RefreshTokenExpiresAt { get; set; }
 
         //relational
+        public ICollection<FollowItem> Follows { get; set; } = new List<FollowItem>();
+        public ICollection<FollowerItem> Followers { get; set; } = new List<FollowerItem>();
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<PostLikeItem> LikedPosts { get; set; } = new List<PostLikeItem>();
         public ICollection<CommentLikeItem> LikedComments { get; set; } = new List<CommentLikeItem>();

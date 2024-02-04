@@ -7,6 +7,7 @@ using SocialaBackend.Application.Dtos.AppUsers;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Application.Exceptions.AppUser;
 using SocialaBackend.Application.Exceptions.Token;
+using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using System;
@@ -33,6 +34,36 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _tokenService = tokenService;
         }
 
+        public async Task FollowAsync(string followerUsername, string followToUsername)
+        {
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == followToUsername).Include(u => u.Followers).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {followToUsername} didnt found!");
+
+            AppUser? follower = await _userManager.Users.Where(u => u.UserName == followerUsername).Include(u => u.Follows).FirstOrDefaultAsync();
+            if (follower is null) throw new AppUserNotFoundException($"User with username {followerUsername} didnt found!");
+
+            if (follower.Follows.Any(fi => fi.UserName == user.UserName)) throw new AlreadyFollowedException($"You already followed to {followToUsername}!");
+            follower.Follows.Add(new FollowItem
+            {
+                Name = user.Name,
+                Surname = user.Surname,
+                ImageUrl = user.ImageUrl,
+                UserName = user.UserName,
+                IsConfirmed = user.IsPrivate ? false : true
+                    
+            });
+            user.Followers.Add(new FollowerItem
+            {
+                Name = follower.Name,
+                Surname = follower.Surname,
+                ImageUrl = follower.ImageUrl,
+                IsConfirmed = user.IsPrivate ? false : true
+            });
+
+            await _userManager.UpdateAsync(user);
+           
+        }
+
         public async Task<AppUserGetDto> GetAsync(string username)
         {
             AppUser user = await _userManager.FindByNameAsync(username);
@@ -55,6 +86,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return dto;
         }
 
+        //auth methods
         public async Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto)
         {
             AppUser user = await _userManager.FindByNameAsync(dto.UsernameOrEmail);
