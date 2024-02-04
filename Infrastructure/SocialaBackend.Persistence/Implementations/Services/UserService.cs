@@ -88,6 +88,22 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return dto;
         }
 
+        public async Task<ICollection<FollowGetDto>> GetFollowersAsync(string username, int? skip)
+        {
+            if (skip is null) skip = 0;
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers.Skip((int) skip)).Take(10).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            return _mapper.Map<ICollection<FollowGetDto>>(user.Followers);
+        }
+
+        public async Task<ICollection<FollowGetDto>> GetFollowsAsync(string username, int? skip)
+        {
+            if (skip is null) skip = 0;
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Follows.Skip((int)skip)).Take(10).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            return _mapper.Map<ICollection<FollowGetDto>>(user.Follows);
+        }
+
         //auth methods
         public async Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto)
         {

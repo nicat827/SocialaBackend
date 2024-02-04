@@ -23,6 +23,8 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         //follow methods
         Task FollowAsync(string followerUsername, string followToUsername);
+        Task<ICollection<FollowGetDto>> GetFollowersAsync(string username, int? skip);
+        Task<ICollection<FollowGetDto>> GetFollowsAsync(string username, int? skip);
 
 
     }

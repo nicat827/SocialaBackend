@@ -75,6 +75,19 @@ namespace SocialaBackend.API.Controllers
             await _service.FollowAsync(User.Identity.Name, username);
             return Ok();
         }
+        [Authorize]
+        [HttpGet("users/{username}/follows")]
+        public async Task<IActionResult> GetFollows(string username, int? skip = null)
+        {
+            return Ok(await _service.GetFollowsAsync(username, skip));
+        }
+        [Authorize]
+        [HttpGet("users/{username}/followers")]
+        public async Task<IActionResult> GetFollowers(string username , int? skip = null)
+        {
+            return Ok(await _service.GetFollowersAsync(username, skip));
+        }
+
 
     }
 }

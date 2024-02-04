@@ -20,7 +20,7 @@ namespace SocialaBackend.Domain.Entities
         public string Surname { get; set; } = null!;
         //relational
 
-        public string AppUserId { get; set; }
+        public string AppUserId { get; set; } = null!;
         public AppUser AppUser { get; set; } = null!;
 
         
