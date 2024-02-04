@@ -6,6 +6,16 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record AppUserGetDto(string Name, string Surname, string UserName, string? ImageUrl,string? BackgroundImage, bool IsPrivate);
+    public class AppUserGetDto
+    {
+        public string Name { get; set; } = null!;
+        public string Surname { get; set; } = null!;
+        public string UserName { get; set; } = null!;
+        public string? ImageUrl { get; set; }
+        public string? BackgroundImage { get; set; }
+        public bool IsPrivate { get; set; }
+        public int FollowsCount { get; set; }
+        public int FollowersCount { get; set; }
+    }
     
 }

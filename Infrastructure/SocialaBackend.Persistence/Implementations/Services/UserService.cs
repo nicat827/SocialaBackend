@@ -126,9 +126,16 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<AppUserGetDto> GetAsync(string username)
         {
-            AppUser user = await _userManager.FindByNameAsync(username);
+            AppUser? user = await _userManager.Users
+                .Where(u => u.UserName == username)
+                .Include(u => u.Followers.Where(f => f.IsConfirmed == true))
+                .Include(u => u.Follows.Where(f => f.IsConfirmed == true))
+                .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
-            return _mapper.Map<AppUserGetDto>(user);
+            AppUserGetDto dto = _mapper.Map<AppUserGetDto>(user);
+            dto.FollowersCount = user.Followers.Count;
+            dto.FollowsCount = user.Follows.Count;
+            return dto;
         }
 
         public async Task<CurrentAppUserGetDto> GetCurrentUserAsync()
