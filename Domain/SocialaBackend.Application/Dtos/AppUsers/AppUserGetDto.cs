@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record AppUserGetDto(string Name, string Surname, string UserName, string? ImageUrl, bool IsPrivate);
+    public record AppUserGetDto(string Name, string Surname, string UserName, string? ImageUrl,string? BackgroundImage, bool IsPrivate);
     
 }
