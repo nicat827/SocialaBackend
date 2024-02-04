@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record CommentGetDto(int Id, string Author, string? AuthorImageUrl, string Text, int LikesCount);
+    public record CommentGetDto(int Id, string Author, string? AuthorImageUrl, string Text, int RepliesCount, int LikesCount);
     
 }

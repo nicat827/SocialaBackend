@@ -92,17 +92,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Author = user.UserName
             });
           
-            //comment.RepliesCount++;
+            comment.RepliesCount++;
             await _commentRepository.SaveChangesAsync();
 
         }
         // надо доработать
-        public async Task<IEnumerable<CommentGetDto>> GetRepliesAsync(int id, int? skip)
+        public async Task<IEnumerable<ReplyGetDto>> GetRepliesAsync(int id, int? skip)
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetPostByIdWithExpersionIncludes(id, p => p.Comments.Skip((int)skip).Take(10));
-            if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
-            return _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments);
+            Comment? comment = await _commentRepository.GetEntityByIdWithSkipIncludes(id, c => c.Replies.Skip((int)skip).Take(10));
+            if (comment is null) throw new NotFoundException($"Comment with id {id} wasnt defined!");
+            return _mapper.Map<IEnumerable<ReplyGetDto>>(comment.Replies);
 
         }
 
@@ -135,7 +135,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<IEnumerable<CommentGetDto>> GetCommentsAsync(int id, int? skip)
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetPostByIdWithExpersionIncludes(id, p => p.Comments.Skip((int)skip).Take(10));
+            Post? post = await _postRepository.GetEntityByIdWithSkipIncludes(id, p => p.Comments.Skip((int)skip).Take(10));
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
             return _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments);
 
@@ -145,7 +145,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetPostByIdWithExpersionIncludes(id, p => p.Likes.Skip((int)skip).Take(10));
+            Post? post = await _postRepository.GetEntityByIdWithSkipIncludes(id, p => p.Likes.Skip((int)skip).Take(10));
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
 
             return _mapper.Map<IEnumerable<PostLikeGetDto>>(post.Likes);
@@ -158,16 +158,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Where(u => u.UserName == username)
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Comments.Take(5))
-                        .ThenInclude(c => c.Likes)
-                .Include(u => u.Posts)
-                    .ThenInclude(p => p.Comments.Take(5))
-                        .ThenInclude(c => c.Replies)
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Items)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
             ICollection<PostGetDto> dto = _mapper.Map<ICollection<PostGetDto>>(user.Posts);
-           
+            
             return dto;
 
         }

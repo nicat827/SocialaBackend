@@ -12,11 +12,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories
 {
     public interface IPostRepository : IGenericRepository<Post>
     {
-        Task<Post> GetPostByIdWithExpersionIncludes(
-            int id,
-            Expression<Func<Post, IEnumerable<BaseEntity>>> expression,
-            bool isTracking = false,
-            bool iqnoreQuery = false
-            );
+       
+     
     }
 }

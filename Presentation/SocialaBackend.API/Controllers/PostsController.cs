@@ -63,6 +63,16 @@ namespace SocialaBackend.API.Controllers
 
         }
 
+        [HttpGet("comment/{id}/replies")]
+        [Authorize]
+        public async Task<IActionResult> GetReplies(int id, int? skip = null)
+        {
+            if (skip < 0) throw new InvalidSkipException($"Invalid skip: {skip}!");
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+
+            return Ok(await _service.GetRepliesAsync(id, skip));
+        }
+
         [HttpPost("comment/{id}/like")]
         [Authorize]
         public async Task<IActionResult> LikeComment(int id)

@@ -11,10 +11,8 @@ namespace SocialaBackend.Domain.Entities
     public class CommentLikeItem:BaseEntity
     {
         public int CommentId { get; set; }
-
         public Comment Comment { get; set; } = null!;
         public string? AppUserId { get; set; } = null!;
-
         public AppUser? AppUser { get; set; } = null!;
     }
 }

@@ -53,5 +53,6 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
         void RevertSoftDelete(T entity);
         Task SaveChangesAsync();
         Task<bool> IsExistEntityAsync(Expression<Func<T, bool>> expression);
+        Task<T> GetEntityByIdWithSkipIncludes(int id, Expression<Func<T, object>> expression, bool isTracking = false, bool iqnoreQuery = false);
     }
 }

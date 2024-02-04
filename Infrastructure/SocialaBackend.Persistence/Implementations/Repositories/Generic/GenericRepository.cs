@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories.Generic;
+using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.Base;
 using SocialaBackend.Persistence.DAL;
 using System;
@@ -131,6 +132,15 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             IQueryable<T> query = _table;
             query = query.IgnoreQueryFilters();
             return await query.AnyAsync(expression);
+        }
+
+        public async Task<T> GetEntityByIdWithSkipIncludes(int id, Expression<Func<T, object>> expression, bool isTracking = false, bool iqnoreQuery = false)
+        {
+            IQueryable<T> query = _table;
+            if (iqnoreQuery) query = query.IgnoreQueryFilters();
+            query = query.Where(e => e.Id == id);
+            query = query.Include(expression);
+            return isTracking ? await query.FirstOrDefaultAsync() : await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
 
