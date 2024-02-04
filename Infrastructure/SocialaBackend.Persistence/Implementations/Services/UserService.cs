@@ -24,14 +24,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
-       
+        private readonly SignInManager<AppUser> _signInManager;
 
-        public UserService(IFIleService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService)
+        public UserService(IFIleService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
             _fileService = fileService;
             _userManager = userManager;
             _mapper = mapper;
             _tokenService = tokenService;
+            _signInManager = signInManager;
         }
 
         public async Task FollowAsync(string followerUsername, string followToUsername)
@@ -57,6 +58,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Name = follower.Name,
                 Surname = follower.Surname,
                 ImageUrl = follower.ImageUrl,
+                UserName = follower.UserName,
                 IsConfirmed = user.IsPrivate ? false : true
             });
 
@@ -95,9 +97,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 user = await _userManager.FindByEmailAsync(dto.UsernameOrEmail);
                 if (user is null) throw new AppUserNotFoundException("Username, email or password is incorrect!", 400);
             }
-            if (await _userManager.IsLockedOutAsync(user)) throw new AppUserLockoutException("Too many failure attempts! Try later!");
-            if (!await _userManager.CheckPasswordAsync(user, dto.Password)) throw new WrongPasswordException("Username, email or password is incorrect!");
             
+            var res = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, true);
+            
+            if (res.IsLockedOut)
+            {
+                TimeSpan blockTimeLeft = (DateTimeOffset)(user.LockoutEnd) - DateTimeOffset.UtcNow;
+                byte totalMinutes = (byte)blockTimeLeft.Minutes;
+                byte totalSeconds = (byte)blockTimeLeft.Seconds;
+                throw new AppUserLockoutException($"Too many failure attempts! Try later!",totalMinutes, totalSeconds);
+            }
+            if (!res.Succeeded) throw new WrongPasswordException("Username, email or password is incorrect!");
+
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
             user.RefreshToken = tokens.RefreshToken;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;

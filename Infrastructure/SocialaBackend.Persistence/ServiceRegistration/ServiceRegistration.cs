@@ -28,7 +28,9 @@ namespace SocialaBackend.Persistence.ServiceRegistration
                 opt.Password.RequireNonAlphanumeric = true;
 
                 opt.User.RequireUniqueEmail = false;
-                
+
+                opt.Lockout.MaxFailedAccessAttempts = 5;
+                opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
                 opt.Lockout.AllowedForNewUsers = true;
 
             }).AddDefaultTokenProviders().AddEntityFrameworkStores<AppDbContext>();

@@ -1,4 +1,5 @@
-﻿using SocialaBackend.Application.Exceptions.Base;
+﻿using SocialaBackend.Application.Exceptions.AppUser;
+using SocialaBackend.Application.Exceptions.Base;
 
 namespace SocialaBackend.API.Middlewares
 {
@@ -16,6 +17,13 @@ namespace SocialaBackend.API.Middlewares
             try
             {
                 await _next.Invoke(context);
+            }
+            catch (AppUserLockoutException ex)
+            {
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = ex.Code;
+                var obj = new { statusCode = ex.Code, message = ex.Message, minutes=ex.TotalMinutes, seconds=ex.TotalSecunds};
+                await context.Response.WriteAsJsonAsync(obj);
             }
             catch (BaseException ex)
             {

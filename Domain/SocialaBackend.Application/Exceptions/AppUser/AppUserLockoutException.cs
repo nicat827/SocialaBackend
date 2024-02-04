@@ -9,8 +9,13 @@ namespace SocialaBackend.Application.Exceptions.AppUser
 {
     public class AppUserLockoutException : BaseException
     {
-        public AppUserLockoutException(string mess, int code=400) : base(mess, code)
+        public AppUserLockoutException(string mess, byte totalMinutes, byte totalSeconds, int code=423) : base(mess, code)
         {
+            TotalSecunds = totalSeconds;
+            TotalMinutes = totalMinutes;
         }
+        public byte TotalMinutes { get; set; }
+
+        public byte TotalSecunds { get; set; }
     }
 }
