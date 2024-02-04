@@ -17,6 +17,8 @@ namespace SocialaBackend.Domain.Entities.User
 
         public bool IsPrivate { get; set; }
 
+        public string? BackgroundImage { get; set; }    
+
         public string? RefreshToken { get; set; } = null!;
 
         public DateTime? RefreshTokenExpiresAt { get; set; }

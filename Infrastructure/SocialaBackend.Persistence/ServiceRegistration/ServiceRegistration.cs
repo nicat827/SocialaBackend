@@ -35,6 +35,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
 
             }).AddDefaultTokenProviders().AddEntityFrameworkStores<AppDbContext>();
 
+            services.AddHttpContextAccessor();
 
             //repos
             services.AddScoped<IPostRepository, PostRepository>();

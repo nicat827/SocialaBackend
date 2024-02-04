@@ -45,7 +45,7 @@ namespace SocialaBackend.API.Controllers
 
         public async Task<IActionResult> Get()
         {
-            return Ok(await _service.GetCurrentUserAsync(User.Identity.Name));
+            return Ok(await _service.GetCurrentUserAsync());
         }
         [HttpPost("auth/refresh/{refreshToken}")]
         public async Task<IActionResult> Post(string refreshToken)
@@ -72,27 +72,27 @@ namespace SocialaBackend.API.Controllers
         [HttpPost("users/{username}/follow")]
         public async Task<IActionResult> Follow(string username)
         {
-            await _service.FollowAsync(User.Identity.Name, username);
+            await _service.FollowAsync(username);
             return Ok();
         }
         [Authorize]
         [HttpGet("users/{username}/follows")]
         public async Task<IActionResult> GetFollows(string username, int? skip = null)
         {
-            return Ok(await _service.GetFollowsAsync(username, skip));
+            return Ok(await _service.GetFollowsAsync(username,skip));
         }
         [Authorize]
         [HttpGet("users/{username}/followers")]
-        public async Task<IActionResult> GetFollowers(string username , int? skip = null)
+        public async Task<IActionResult> GetFollowers(string username, int? skip = null)
         {
-            return Ok(await _service.GetFollowersAsync(username, skip));
+            return Ok(await _service.GetFollowersAsync(username,skip));
         }
 
         [Authorize]
         [HttpPost("users/followers/confirm/{id}")]
         public async Task<IActionResult> ConfirmFollower(int id)
         {
-            await _service.ConfirmFollowerAsync(User.Identity.Name, id);
+            await _service.ConfirmFollowerAsync(id);
             return Ok();
         }
 
@@ -100,7 +100,7 @@ namespace SocialaBackend.API.Controllers
         [HttpDelete("users/followers/cancel/{id}")]
         public async Task<IActionResult> CancelFollower(int id)
         {
-            await _service.CancelFollowerAsync(User.Identity.Name, id);
+            await _service.CancelFollowerAsync(id);
             return NoContent();
         }
 
@@ -108,7 +108,7 @@ namespace SocialaBackend.API.Controllers
         [HttpDelete("users/follows/cancel/{id}")]
         public async Task<IActionResult> CancelFollow(int id)
         {
-            await _service.CancelFollowAsync(User.Identity.Name, id);
+            await _service.CancelFollowAsync(id);
             return NoContent();
         }
 

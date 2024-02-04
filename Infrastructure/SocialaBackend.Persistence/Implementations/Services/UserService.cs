@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Razor.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.AppUsers;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Application.Exceptions.AppUser;
+using SocialaBackend.Application.Exceptions.Forbidden;
 using SocialaBackend.Application.Exceptions.Token;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
@@ -21,14 +23,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class UserService : IUserService
     {
+        private readonly IHttpContextAccessor _http;
         private readonly IFIleService _fileService;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
         private readonly SignInManager<AppUser> _signInManager;
+        private readonly string _currentUserName;
 
-        public UserService(IFIleService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
+        public UserService(IHttpContextAccessor http, IFIleService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
+            _http = http;
+            _currentUserName = http.HttpContext.User.Identity.Name;
             _fileService = fileService;
             _userManager = userManager;
             _mapper = mapper;
@@ -36,15 +42,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _signInManager = signInManager;
         }
 
-        public async Task ConfirmFollowerAsync(string username, int id)
+        public async Task ConfirmFollowerAsync(int id)
         {
-            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).FirstOrDefaultAsync();
-            if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == _currentUserName).Include(u => u.Followers).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with _currentUserName {_currentUserName} doesnt exists!");
             FollowerItem? item = user.Followers.FirstOrDefault(f => f.IsConfirmed == false && f.Id == id);
             if (item is null) throw new NotFoundException($"Follower with id {id} wasnt defined!");
 
             AppUser? follower = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Follows).FirstOrDefaultAsync();
-            if (follower is null) throw new AppUserNotFoundException($"Follower with username {username} doesnt exists!");
+            if (follower is null) throw new AppUserNotFoundException($"Follower with username {_currentUserName} doesnt exists!");
             FollowItem? followItem = follower.Follows.FirstOrDefault(f => f.UserName == user.UserName);
             if (followItem is null) throw new NotFoundException($"Follow to {user.UserName} wasnt defined!");
             item.IsConfirmed = true;
@@ -52,15 +58,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(user);
             await _userManager.UpdateAsync(follower);
         }
-        public async Task CancelFollowerAsync(string username, int id)
+        public async Task CancelFollowerAsync(int id)
         {
-            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).FirstOrDefaultAsync();
-            if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == _currentUserName).Include(u => u.Followers).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
             FollowerItem? item = user.Followers.FirstOrDefault(f => f.Id == id);
             if (item is null) throw new NotFoundException($"Follower item with id {id} wasnt defined!");
 
             AppUser? follower = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Follows).FirstOrDefaultAsync();
-            if (follower is null) throw new AppUserNotFoundException($"Follower with username {username} doesnt exists!");
+            if (follower is null) throw new AppUserNotFoundException($"Follower with username {_currentUserName} doesnt exists!");
             FollowItem? followItem = follower.Follows.FirstOrDefault(f => f.UserName == user.UserName);
             if (followItem is null) throw new NotFoundException($"Follow to {user.UserName} wasnt defined!");
 
@@ -69,15 +75,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(user);
             await _userManager.UpdateAsync(follower);
         }
-        public async Task CancelFollowAsync(string username, int id)
+        public async Task CancelFollowAsync(int id)
         {
-            AppUser? currentUser = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Follows).FirstOrDefaultAsync();
-            if (currentUser is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            AppUser? currentUser = await _userManager.Users.Where(u => u.UserName == _currentUserName).Include(u => u.Follows).FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
             FollowItem? item = currentUser.Follows.FirstOrDefault(f => f.Id == id);
             if (item is null) throw new NotFoundException($"Follow didnt found!");
 
             AppUser? followingUser = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Followers).FirstOrDefaultAsync();
-            if (followingUser is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            if (followingUser is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
             FollowerItem? followerItem = followingUser.Followers.FirstOrDefault(f => f.UserName == currentUser.UserName);
             if (followerItem is null) throw new NotFoundException($"Follower item  with username {currentUser.UserName} wasnt defined!");
 
@@ -86,13 +92,13 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(currentUser);
             await _userManager.UpdateAsync(followingUser);
         }
-        public async Task FollowAsync(string followerUsername, string followToUsername)
+        public async Task FollowAsync(string followToUsername)
         {
             AppUser? user = await _userManager.Users.Where(u => u.UserName == followToUsername).Include(u => u.Followers).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {followToUsername} didnt found!");
 
-            AppUser? follower = await _userManager.Users.Where(u => u.UserName == followerUsername).Include(u => u.Follows).FirstOrDefaultAsync();
-            if (follower is null) throw new AppUserNotFoundException($"User with username {followerUsername} didnt found!");
+            AppUser? follower = await _userManager.Users.Where(u => u.UserName == _currentUserName).Include(u => u.Follows).FirstOrDefaultAsync();
+            if (follower is null) throw new AppUserNotFoundException($"User with username {_currentUserName} didnt found!");
 
             if (follower.Follows.Any(fi => fi.UserName == user.UserName)) throw new AlreadyFollowedException($"You already followed to {followToUsername}!");
             follower.Follows.Add(new FollowItem
@@ -124,7 +130,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return _mapper.Map<AppUserGetDto>(user);
         }
 
-        public async Task<CurrentAppUserGetDto> GetCurrentUserAsync(string username)
+        public async Task<CurrentAppUserGetDto> GetCurrentUserAsync()
         {
             AppUser? user = await _userManager.Users
                 .Include(u => u.Follows)
@@ -133,8 +139,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.LikedPosts)
                     .ThenInclude(lp => lp.Post)
                 .Include(u => u.LikedComments)
-                .FirstOrDefaultAsync(u => u.UserName == username);
-            if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
+                .FirstOrDefaultAsync(u => u.UserName == _currentUserName);
+            if (user is null) throw new AppUserNotFoundException($"User with _currentUserName {_currentUserName} wasnt defined!");
             CurrentAppUserGetDto dto =  _mapper.Map<CurrentAppUserGetDto>(user);
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
@@ -143,17 +149,30 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<ICollection<FollowGetDto>> GetFollowersAsync(string username, int? skip)
         {
+
             if (skip is null) skip = 0;
             AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers.Skip((int) skip)).Take(10).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            if (user.IsPrivate)
+                {
+                    if (username != _currentUserName)
+                        if (!user.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                            throw new ForbiddenException("This account is private, follow for seeing followers!");
+                }
             return _mapper.Map<ICollection<FollowGetDto>>(user.Followers);
         }
 
         public async Task<ICollection<FollowGetDto>> GetFollowsAsync(string username, int? skip)
         {
             if (skip is null) skip = 0;
-            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Follows.Skip((int)skip)).Take(10).FirstOrDefaultAsync();
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).Include(u => u.Follows.Skip((int)skip)).Take(10).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            if (user.IsPrivate)
+            {
+                if (username != _currentUserName)
+                    if (!user.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                        throw new ForbiddenException("This account is private, follow for seeing followers!");
+            }
             return _mapper.Map<ICollection<FollowGetDto>>(user.Follows);
         }
 
@@ -218,7 +237,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 _fileService.CheckFileSize(dto.Photo, 2);
             }
 
-            if (await _userManager.Users.AnyAsync(u => u.UserName == dto.Username)) throw new UserAlreadyExistException($"User with username {dto.Username} already exists!");
+            if (await _userManager.Users.AnyAsync(u => u.UserName == dto.Username)) throw new UserAlreadyExistException($"User with _currentUserName {dto.Username} already exists!");
             AppUser newUser = _mapper.Map<AppUser>(dto);
             var res = await _userManager.CreateAsync(newUser, dto.Password);
             if (!res.Succeeded)
