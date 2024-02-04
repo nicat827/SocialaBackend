@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Razor.Hosting;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
@@ -35,6 +36,56 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _signInManager = signInManager;
         }
 
+        public async Task ConfirmFollowerAsync(string username, int id)
+        {
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            FollowerItem? item = user.Followers.FirstOrDefault(f => f.IsConfirmed == false && f.Id == id);
+            if (item is null) throw new NotFoundException($"Follower with id {id} wasnt defined!");
+
+            AppUser? follower = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Follows).FirstOrDefaultAsync();
+            if (follower is null) throw new AppUserNotFoundException($"Follower with username {username} doesnt exists!");
+            FollowItem? followItem = follower.Follows.FirstOrDefault(f => f.UserName == user.UserName);
+            if (followItem is null) throw new NotFoundException($"Follow to {user.UserName} wasnt defined!");
+            item.IsConfirmed = true;
+            followItem.IsConfirmed = true;
+            await _userManager.UpdateAsync(user);
+            await _userManager.UpdateAsync(follower);
+        }
+        public async Task CancelFollowerAsync(string username, int id)
+        {
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            FollowerItem? item = user.Followers.FirstOrDefault(f => f.Id == id);
+            if (item is null) throw new NotFoundException($"Follower item with id {id} wasnt defined!");
+
+            AppUser? follower = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Follows).FirstOrDefaultAsync();
+            if (follower is null) throw new AppUserNotFoundException($"Follower with username {username} doesnt exists!");
+            FollowItem? followItem = follower.Follows.FirstOrDefault(f => f.UserName == user.UserName);
+            if (followItem is null) throw new NotFoundException($"Follow to {user.UserName} wasnt defined!");
+
+            user.Followers.Remove(item);
+            follower.Follows.Remove(followItem);
+            await _userManager.UpdateAsync(user);
+            await _userManager.UpdateAsync(follower);
+        }
+        public async Task CancelFollowAsync(string username, int id)
+        {
+            AppUser? currentUser = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Follows).FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            FollowItem? item = currentUser.Follows.FirstOrDefault(f => f.Id == id);
+            if (item is null) throw new NotFoundException($"Follow didnt found!");
+
+            AppUser? followingUser = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Followers).FirstOrDefaultAsync();
+            if (followingUser is null) throw new AppUserNotFoundException($"User with username {username} doesnt exists!");
+            FollowerItem? followerItem = followingUser.Followers.FirstOrDefault(f => f.UserName == currentUser.UserName);
+            if (followerItem is null) throw new NotFoundException($"Follower item  with username {currentUser.UserName} wasnt defined!");
+
+            currentUser.Follows.Remove(item);
+            followingUser.Followers.Remove(followerItem);
+            await _userManager.UpdateAsync(currentUser);
+            await _userManager.UpdateAsync(followingUser);
+        }
         public async Task FollowAsync(string followerUsername, string followToUsername)
         {
             AppUser? user = await _userManager.Users.Where(u => u.UserName == followToUsername).Include(u => u.Followers).FirstOrDefaultAsync();
@@ -76,6 +127,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<CurrentAppUserGetDto> GetCurrentUserAsync(string username)
         {
             AppUser? user = await _userManager.Users
+                .Include(u => u.Follows)
+                .Include(u => u.Followers)
                 .Include(u => u.LikedReplies)
                 .Include(u => u.LikedPosts)
                     .ThenInclude(lp => lp.Post)

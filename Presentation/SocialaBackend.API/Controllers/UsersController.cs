@@ -88,6 +88,30 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.GetFollowersAsync(username, skip));
         }
 
+        [Authorize]
+        [HttpPost("users/followers/confirm/{id}")]
+        public async Task<IActionResult> ConfirmFollower(int id)
+        {
+            await _service.ConfirmFollowerAsync(User.Identity.Name, id);
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpDelete("users/followers/cancel/{id}")]
+        public async Task<IActionResult> CancelFollower(int id)
+        {
+            await _service.CancelFollowerAsync(User.Identity.Name, id);
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpDelete("users/follows/cancel/{id}")]
+        public async Task<IActionResult> CancelFollow(int id)
+        {
+            await _service.CancelFollowAsync(User.Identity.Name, id);
+            return NoContent();
+        }
+
 
     }
 }
