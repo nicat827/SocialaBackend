@@ -6,6 +6,7 @@ using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Application.Exceptions.Forbidden;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using System;
@@ -26,18 +27,22 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IReplyRepository _replyRepository;
         private readonly IPostRepository _postRepository;
 
+        private readonly string _currentUserName;
+
         public PostService(UserManager<AppUser> userManager,
             IFIleService fileService,
             IPostRepository repository,
             IMapper mapper,
             ICommentRepository commentRepository,
             IReplyRepository replyRepository,
+            IHttpContextAccessor http,
             IPostRepository postRepository)
         {
             _userManager = userManager;
             _fileService = fileService;
             _repository = repository;
             _mapper = mapper;
+            _currentUserName = http.HttpContext.User.Identity.Name;
             _commentRepository = commentRepository;
             _replyRepository = replyRepository;
             _postRepository = postRepository;
@@ -183,8 +188,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     .ThenInclude(p => p.Comments.Take(5))
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Items)
+                .Include(u => u.Followers)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
+            if (user.IsPrivate)
+            {
+                if (username != _currentUserName)
+                    if (!user.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                        throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             ICollection<PostGetDto> dto = _mapper.Map<ICollection<PostGetDto>>(user.Posts);
             
             return dto;
@@ -193,8 +205,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task LikePostAsync(int id, string username)
         {
-            AppUser user = await _userManager.FindByNameAsync(username);
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
+            if (user.IsPrivate)
+            {
+                if (username != _currentUserName)
+                    if (!user.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                        throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             Post post = await _postRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
             if (post is null) throw new NotFoundException("Post didnt found!");
 

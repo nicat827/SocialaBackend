@@ -94,6 +94,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         }
         public async Task FollowAsync(string followToUsername)
         {
+            if (_currentUserName == followToUsername) throw new WrongFollowException("You cant follow to yourself!");
             AppUser? user = await _userManager.Users.Where(u => u.UserName == followToUsername).Include(u => u.Followers).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {followToUsername} didnt found!");
 
