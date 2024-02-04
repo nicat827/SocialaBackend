@@ -12,6 +12,7 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public string UserName { get; set; }
         public string? ImageUrl { get; set; }
         public ICollection<AppUserLikesGetDto> LikedPosts { get; set; } = new List<AppUserLikesGetDto>();
-        public ICollection<int> LikedCommentsIds { get; set; } = new List<int>();
+        public IEnumerable<int> LikedCommentsIds { get; set; } = new List<int>();
+        public IEnumerable<int> LikedRepliesIds { get; set; } = new List<int>();
     }
 }

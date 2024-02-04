@@ -12,7 +12,9 @@ namespace SocialaBackend.Domain.Entities
         public string Text { get; set; } = null!;
         public string Author { get; set; } = null!;
         public string? AuthorImageUrl { get; set; }
+        public int LikesCount { get; set; }
         //relational 
+        public ICollection<ReplyLikeItem> Likes { get; set; } = new List<ReplyLikeItem>();
 
         public int CommentId { get; set; }
 

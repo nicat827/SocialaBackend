@@ -23,5 +23,6 @@ namespace SocialaBackend.Domain.Entities.User
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<PostLikeItem> LikedPosts { get; set; } = new List<PostLikeItem>();
         public ICollection<CommentLikeItem> LikedComments { get; set; } = new List<CommentLikeItem>();
+        public ICollection<ReplyLikeItem> LikedReplies { get; set; } = new List<ReplyLikeItem>();
     }
 }

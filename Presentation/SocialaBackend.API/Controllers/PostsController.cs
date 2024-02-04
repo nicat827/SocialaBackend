@@ -73,6 +73,16 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.GetRepliesAsync(id, skip));
         }
 
+        [HttpPost("reply/{id}/like")]
+        [Authorize]
+        public async Task<IActionResult> LikeReply(int id)
+        {
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.LikeReplyAsync(id, User.Identity?.Name);
+            return NoContent();
+
+        }
+
         [HttpPost("comment/{id}/like")]
         [Authorize]
         public async Task<IActionResult> LikeComment(int id)

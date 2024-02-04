@@ -23,6 +23,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IPostRepository _repository;
         private readonly IMapper _mapper;
         private readonly ICommentRepository _commentRepository;
+        private readonly IReplyRepository _replyRepository;
         private readonly IPostRepository _postRepository;
 
         public PostService(UserManager<AppUser> userManager,
@@ -30,6 +31,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             IPostRepository repository,
             IMapper mapper,
             ICommentRepository commentRepository,
+            IReplyRepository replyRepository,
             IPostRepository postRepository)
         {
             _userManager = userManager;
@@ -37,6 +39,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _repository = repository;
             _mapper = mapper;
             _commentRepository = commentRepository;
+            _replyRepository = replyRepository;
             _postRepository = postRepository;
         }
 
@@ -57,7 +60,27 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _postRepository.SaveChangesAsync();
 
         }
+        public async Task LikeReplyAsync(int id, string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException("User wasnt found!");
+            Reply reply = await _replyRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
+            if (reply is null) throw new NotFoundException("Comment didnt found!");
 
+            ReplyLikeItem? likedItem = reply.Likes.FirstOrDefault(li => li.AppUserId == user.Id);
+            if (likedItem is null)
+            {
+                reply.Likes.Add(new ReplyLikeItem { AppUserId = user.Id });
+                reply.LikesCount++;
+            }
+            else
+            {
+                reply.Likes.Remove(likedItem);
+                reply.LikesCount--;
+
+            }
+            await _replyRepository.SaveChangesAsync();
+        }
         public async Task LikeCommentAsync(int id, string username)
         {
             AppUser user = await _userManager.FindByNameAsync(username);
