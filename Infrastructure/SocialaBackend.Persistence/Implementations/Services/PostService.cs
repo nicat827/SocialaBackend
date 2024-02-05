@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
@@ -25,6 +26,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IMapper _mapper;
         private readonly ICommentRepository _commentRepository;
         private readonly IReplyRepository _replyRepository;
+        private readonly ILikeRepository _likeRepository;
         private readonly IPostRepository _postRepository;
 
         private readonly string _currentUserName;
@@ -36,6 +38,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             ICommentRepository commentRepository,
             IReplyRepository replyRepository,
             IHttpContextAccessor http,
+            ILikeRepository likeRepository,
             IPostRepository postRepository)
         {
             _userManager = userManager;
@@ -45,16 +48,23 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _currentUserName = http.HttpContext.User.Identity.Name;
             _commentRepository = commentRepository;
             _replyRepository = replyRepository;
+            _likeRepository = likeRepository;
             _postRepository = postRepository;
         }
 
-        public async Task CommentAsync(int id, string text, string username)
+        public async Task CommentAsync(int id, string text)
         {
-            AppUser user = await _userManager.FindByNameAsync(username);
+            AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Post post = await _postRepository.GetByIdAsync(id,isTracking:true, includes:"Comments");
+            Post post = await _postRepository.GetByIdAsync(id,true, includes:new[] { "Comments", "AppUser", "AppUser.Followers" });
             if (post is null) throw new NotFoundException("Post didnt found!");
+            AppUser owner = post.AppUser;
 
+            if (owner.IsPrivate)
+            {
+                if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                    throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             post.Comments.Add(new Comment
             {
                 Text = text,
@@ -65,13 +75,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _postRepository.SaveChangesAsync();
 
         }
-        public async Task LikeReplyAsync(int id, string username)
+        public async Task LikeReplyAsync(int id)
         {
-            AppUser user = await _userManager.FindByNameAsync(username);
+            AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Reply reply = await _replyRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
-            if (reply is null) throw new NotFoundException("Comment didnt found!");
+            Reply reply = await _replyRepository.GetByIdAsync(id,true, includes: new[] { "Likes", "Comment", "Comment.Post", "Comment.Post.AppUser", "Comment.Post.AppUser.Followers" });
+            if (reply is null) throw new NotFoundException("Reply didnt found!");
 
+            AppUser owner = reply.Comment.Post.AppUser;
+
+            if (owner.IsPrivate)
+            {
+                if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                    throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             ReplyLikeItem? likedItem = reply.Likes.FirstOrDefault(li => li.AppUserId == user.Id);
             if (likedItem is null)
             {
@@ -86,13 +103,19 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             await _replyRepository.SaveChangesAsync();
         }
-        public async Task LikeCommentAsync(int id, string username)
+        public async Task LikeCommentAsync(int id)
         {
-            AppUser user = await _userManager.FindByNameAsync(username);
+            AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Comment comment = await _commentRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
+            Comment comment = await _commentRepository.GetByIdAsync(id,true, includes: new[] { "Likes", "Post", "Post.AppUser", "Post.AppUser.Followers" });
             if (comment is null) throw new NotFoundException("Comment didnt found!");
+            AppUser owner = comment.Post.AppUser;
 
+            if (owner.IsPrivate)
+            {
+                if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                    throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             CommentLikeItem? likedItem = comment.Likes.FirstOrDefault(li => li.AppUserId == user.Id);
             if (likedItem is null)
             {
@@ -107,12 +130,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             await _repository.SaveChangesAsync();
         }
-            public async Task ReplyCommentAsync(int id, string text, string username)
+        public async Task ReplyCommentAsync(int id, string text)
         {
-            AppUser user = await _userManager.FindByNameAsync(username);
+            AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Comment? comment = await _commentRepository.GetByIdAsync(id,true,false,"Replies");
+            Comment? comment = await _commentRepository.GetByIdAsync(id,true, includes: new[] { "Replies", "Post", "Post.AppUser", "Post.AppUser.Followers" });
             if (comment is null) throw new NotFoundException("Comment didnt found!");
+            AppUser owner = comment.Post.AppUser;
+            if (owner.IsPrivate)
+            {
+                if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                    throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             comment.Replies.Add(new Reply
             {
                 Text = text,
@@ -124,20 +153,26 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _commentRepository.SaveChangesAsync();
 
         }
-        // надо доработать
         public async Task<IEnumerable<ReplyGetDto>> GetRepliesAsync(int id, int? skip)
         {
             if (skip is null) skip = 0;
-            Comment? comment = await _commentRepository.GetEntityByIdWithSkipIncludes(id, c => c.Replies.Skip((int)skip).Take(10));
+            Comment? comment = await _commentRepository.GetByIdAsync(id,expression:c => c.Replies.Skip((int)skip).Take(10), includes: new[] { "Post", "Post.AppUser", "Post.AppUser.Followers" });
             if (comment is null) throw new NotFoundException($"Comment with id {id} wasnt defined!");
+            AppUser owner = comment.Post.AppUser;
+            if (owner.IsPrivate)
+            {
+                if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                    throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             return _mapper.Map<IEnumerable<ReplyGetDto>>(comment.Replies);
 
         }
 
 
-        public async Task CreatePostAsync(string username , PostPostDto dto)
+        public async Task CreatePostAsync(PostPostDto dto)
         {
-            AppUser user = await _getUser(username);
+            if (dto.Description is null && dto.Files is null) throw new PostCreateException("At least one of the fields is required!");
+            AppUser user = await _getUser(_currentUserName);
             Post newPost = new Post
             {
                 Description = dto.Description,
@@ -163,8 +198,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<IEnumerable<CommentGetDto>> GetCommentsAsync(int id, int? skip)
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetEntityByIdWithSkipIncludes(id, p => p.Comments.Skip((int)skip).Take(10));
+            Post? post = await _postRepository.GetByIdAsync(id, expression:p => p.Comments.Skip((int)skip).Take(10), includes: new[] { "AppUser", "AppUser.Followers" });
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
+            if (post.AppUser.IsPrivate)
+            {
+                if (post.AppUser.UserName != _currentUserName)
+                    if (!post.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                        throw new ForbiddenException("This account is private, follow for seeing posts!");
+            }
             return _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments);
 
         }
@@ -173,9 +214,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
         
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetEntityByIdWithSkipIncludes(id, p => p.Likes.Skip((int)skip).Take(10));
+            Post? post = await _postRepository.GetByIdAsync(id, expression: p => p.Likes.Skip((int)skip),includes: new[] { "AppUser", "AppUser.Followers" });
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
-
+            if (post.AppUser.IsPrivate)
+            {
+                if (post.AppUser.UserName != _currentUserName)
+                    if (!post.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                        throw new ForbiddenException("This account is private, follow for seeing post likes!");
+            }
             return _mapper.Map<IEnumerable<PostLikeGetDto>>(post.Likes);
 
         }
@@ -203,23 +249,22 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         }
 
-        public async Task LikePostAsync(int id, string username)
+        public async Task LikePostAsync(int id)
         {
-            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).Include(u => u.Followers).FirstOrDefaultAsync();
-            if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            if (user.IsPrivate)
+           
+            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "AppUser", "AppUser.Followers" });
+            if (post is null) throw new NotFoundException("Post didnt found!");
+            if (post.AppUser.IsPrivate)
             {
-                if (username != _currentUserName)
-                    if (!user.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
+                if (post.AppUser.UserName != _currentUserName)
+                    if (!post.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                         throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            Post post = await _postRepository.GetByIdAsync(id, isTracking: true, false, "Likes");
-            if (post is null) throw new NotFoundException("Post didnt found!");
-
-            PostLikeItem? likedItem = post.Likes.FirstOrDefault(li => li.AppUserId == user.Id);
+            PostLikeItem? likedItem = post.Likes.FirstOrDefault(li => li.Username == _currentUserName);
             if (likedItem is null)
             {
-                post.Likes.Add(new PostLikeItem { AppUserId = user.Id, Username = user.UserName, ImageUrl = user.ImageUrl, Name = user.Name, Surname = user.Surname });
+                AppUser user = await _getUser(_currentUserName);
+                post.Likes.Add(new PostLikeItem {AppUserId=user.Id, Username = user.UserName, ImageUrl = user.ImageUrl, Name = user.Name, Surname = user.Surname });
                 post.LikesCount++;
             }
             else 
@@ -231,11 +276,55 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _repository.SaveChangesAsync();
         }
 
+        public async Task DeletePostAsync(int id)
+        {
+            AppUser? currentUser = await _userManager.Users.IgnoreQueryFilters().Where(u => u.UserName == _currentUserName).Include(u => u.Posts.Where(p => p.Id == id)).FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException("User is not defined!");
+            if (currentUser.Posts.FirstOrDefault() is null) throw new NotFoundException($"You dont have a post with id: {id}!");
+            Post? post = await _postRepository.GetByIdAsync(id, true,true, includes:new[] { "Likes",
+                                                                        "Comments", "Comments.Likes", "Comments.Replies", "Comments.Replies.Likes"});
+            
+            if (post.IsDeleted)
+            {
+                _postRepository.Delete(post);
+            }
+            else
+            {
+                post.IsDeleted = true;
+                foreach (var like in  post.Likes)
+                {
+                    like.IsDeleted = true;
+                }
+                foreach (Comment comment in post.Comments)
+                {
+                    comment.IsDeleted = true;
+                    foreach (var commentLike in comment.Likes)
+                    {
+                        commentLike.IsDeleted = true;
+                    }
+                    foreach (Reply reply in comment.Replies)
+                    {
+                        reply.IsDeleted = true;
+                        foreach (var replyLike in reply.Likes)
+                        {
+                            replyLike.IsDeleted = true;
+                        }
+                    }
+                }
+            }
+            await _postRepository.SaveChangesAsync();
+        }
+
+        public Task RecoverPostAsync(int id)
+        {
+            throw new NotImplementedException();
+        }
         private async Task<AppUser> _getUser(string username)
         {
             AppUser user = await _userManager.FindByNameAsync(username);
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
             return user;
         }
+
     }
 }

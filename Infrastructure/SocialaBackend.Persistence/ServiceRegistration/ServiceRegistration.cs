@@ -41,6 +41,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IReplyRepository, ReplyRepository>();
+            services.AddScoped<ILikeRepository, LikeRepository>();
             //services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();

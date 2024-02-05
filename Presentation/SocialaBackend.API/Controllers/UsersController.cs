@@ -97,18 +97,18 @@ namespace SocialaBackend.API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("users/followers/cancel/{id}")]
-        public async Task<IActionResult> CancelFollower(int id)
+        [HttpDelete("users/followers/cancel/{username}")]
+        public async Task<IActionResult> CancelFollower(string username)
         {
-            await _service.CancelFollowerAsync(id);
+            await _service.CancelFollowerAsync(username);
             return NoContent();
         }
 
         [Authorize]
-        [HttpDelete("users/follows/cancel/{id}")]
-        public async Task<IActionResult> CancelFollow(int id)
+        [HttpDelete("users/follows/cancel/{username}")]
+        public async Task<IActionResult> CancelFollow(string username)
         {
-            await _service.CancelFollowAsync(id);
+            await _service.CancelFollowAsync(username);
             return NoContent();
         }
 

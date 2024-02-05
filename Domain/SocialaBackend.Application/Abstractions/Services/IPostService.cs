@@ -9,19 +9,20 @@ namespace SocialaBackend.Application.Abstractions.Services
 {
     public interface IPostService
     {
-        Task CreatePostAsync(string username, PostPostDto dto);
+        Task CreatePostAsync(PostPostDto dto);
 
         Task<ICollection<PostGetDto>> GetPostsAsync(string username);
 
-        Task LikePostAsync(int id, string username);
+        Task LikePostAsync(int id);
         Task<IEnumerable<ReplyGetDto>> GetRepliesAsync(int id, int? skip);
 
         Task<IEnumerable<PostLikeGetDto>> GetLikesAsync(int id, int? skip);
-        Task LikeCommentAsync(int id, string username);
-        Task LikeReplyAsync(int id, string username);
+        Task LikeCommentAsync(int id);
+        Task LikeReplyAsync(int id);
         Task<IEnumerable<CommentGetDto>> GetCommentsAsync(int id, int? skip);
-
-        Task CommentAsync(int id, string text, string username);
-        Task ReplyCommentAsync(int id, string text, string username);
+        Task RecoverPostAsync(int id);
+        Task CommentAsync(int id, string text);
+        Task DeletePostAsync(int id);
+        Task ReplyCommentAsync(int id, string text);
     }
 }

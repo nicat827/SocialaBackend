@@ -19,18 +19,28 @@ namespace SocialaBackend.API.Controllers
         {
             _service = service;
         }
-        [HttpPost()]
+        [HttpPost]
         public async Task<IActionResult> Post([FromForm]PostPostDto dto)
         {
 
-            await _service.CreatePostAsync(User.Identity?.Name, dto);
+            await _service.CreatePostAsync(dto);
             return StatusCode(StatusCodes.Status201Created);
         }
 
-        [HttpGet("{username}")]
-        public async Task<IActionResult> Get(string username)
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> Delete(int id)
         {
-            return Ok(await _service.GetPostsAsync(username));
+            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.DeletePostAsync(id);
+            return NoContent();
+        }
+
+        [HttpPut("recover/{id}")]
+        public async Task<IActionResult> Recover(int id)
+        {
+            await _service.RecoverPostAsync(id);
+            return NoContent();
         }
 
         [HttpPost("{id}/comment")]
@@ -38,7 +48,7 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> Post(int id, string text)
         {
             if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.CommentAsync(id, text, User.Identity?.Name);
+            await _service.CommentAsync(id, text);
             return StatusCode(StatusCodes.Status201Created);
 
         }
@@ -58,7 +68,7 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> Reply(int id, string text)
         {
             if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.ReplyCommentAsync(id, text, User.Identity.Name);
+            await _service.ReplyCommentAsync(id, text);
             return StatusCode(StatusCodes.Status201Created);
 
         }
@@ -78,7 +88,7 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> LikeReply(int id)
         {
             if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.LikeReplyAsync(id, User.Identity?.Name);
+            await _service.LikeReplyAsync(id);
             return NoContent();
 
         }
@@ -88,7 +98,7 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> LikeComment(int id)
         {
             if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.LikeCommentAsync(id, User.Identity?.Name);
+            await _service.LikeCommentAsync(id);
             return NoContent();
 
         }
@@ -98,7 +108,7 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> Post(int id)
         {
             if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.LikePostAsync(id,  User.Identity?.Name);
+            await _service.LikePostAsync(id);
             return NoContent();
 
         }

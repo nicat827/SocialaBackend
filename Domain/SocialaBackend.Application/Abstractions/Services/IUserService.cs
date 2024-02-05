@@ -24,8 +24,8 @@ namespace SocialaBackend.Application.Abstractions.Services
         //follow methods
         Task FollowAsync(string followToUsername);
         Task ConfirmFollowerAsync(int id);
-        Task CancelFollowerAsync(int id);
-        Task CancelFollowAsync(int id);
+        Task CancelFollowerAsync(string username);
+        Task CancelFollowAsync(string username);
         Task<ICollection<FollowGetDto>> GetFollowersAsync(string username,int? skip);
         Task<ICollection<FollowGetDto>> GetFollowsAsync(string username,int? skip);
 

@@ -58,39 +58,45 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(user);
             await _userManager.UpdateAsync(follower);
         }
-        public async Task CancelFollowerAsync(int id)
+        public async Task CancelFollowerAsync(string username)
         {
             AppUser? user = await _userManager.Users.Where(u => u.UserName == _currentUserName).Include(u => u.Followers).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
-            FollowerItem? item = user.Followers.FirstOrDefault(f => f.Id == id);
-            if (item is null) throw new NotFoundException($"Follower item with id {id} wasnt defined!");
+            FollowerItem? item = user.Followers.FirstOrDefault(f => f.UserName == username);
+            if (item is null) throw new NotFoundException($"Follower  {username} wasnt defined!");
 
             AppUser? follower = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Follows).FirstOrDefaultAsync();
-            if (follower is null) throw new AppUserNotFoundException($"Follower with username {_currentUserName} doesnt exists!");
-            FollowItem? followItem = follower.Follows.FirstOrDefault(f => f.UserName == user.UserName);
-            if (followItem is null) throw new NotFoundException($"Follow to {user.UserName} wasnt defined!");
-
+            if (follower is not null)
+            {
+                FollowItem? followItem = follower.Follows.FirstOrDefault(f => f.UserName == user.UserName);
+                if (followItem is not null)
+                {
+                    follower.Follows.Remove(followItem);
+                    await _userManager.UpdateAsync(follower);
+                }
+            }
             user.Followers.Remove(item);
-            follower.Follows.Remove(followItem);
             await _userManager.UpdateAsync(user);
-            await _userManager.UpdateAsync(follower);
         }
-        public async Task CancelFollowAsync(int id)
+        public async Task CancelFollowAsync(string username)
         {
             AppUser? currentUser = await _userManager.Users.Where(u => u.UserName == _currentUserName).Include(u => u.Follows).FirstOrDefaultAsync();
             if (currentUser is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
-            FollowItem? item = currentUser.Follows.FirstOrDefault(f => f.Id == id);
+            FollowItem? item = currentUser.Follows.FirstOrDefault(f => f.UserName == username);
             if (item is null) throw new NotFoundException($"Follow didnt found!");
-
             AppUser? followingUser = await _userManager.Users.Where(u => u.UserName == item.UserName).Include(u => u.Followers).FirstOrDefaultAsync();
-            if (followingUser is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
-            FollowerItem? followerItem = followingUser.Followers.FirstOrDefault(f => f.UserName == currentUser.UserName);
-            if (followerItem is null) throw new NotFoundException($"Follower item  with username {currentUser.UserName} wasnt defined!");
+            if (followingUser is not null)
+            {
+                FollowerItem? followerItem = followingUser.Followers.FirstOrDefault(f => f.UserName == currentUser.UserName);
+                if (followerItem is not null)
+                {
+                    followingUser.Followers.Remove(followerItem);
+                    await _userManager.UpdateAsync(followingUser);
+                }
 
+            } 
             currentUser.Follows.Remove(item);
-            followingUser.Followers.Remove(followerItem);
             await _userManager.UpdateAsync(currentUser);
-            await _userManager.UpdateAsync(followingUser);
         }
         public async Task FollowAsync(string followToUsername)
         {

@@ -85,12 +85,15 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
 
             return isTracking ? query : query.AsNoTracking();
         }
-        public async Task<T> GetByIdAsync(int id, bool isTracking = false, bool iqnoreQuery = false, params string[] includes)
+        public async Task<T> GetByIdAsync(int id, bool isTracking = false, bool iqnoreQuery = false, Expression<Func<T, object>>? expression = null, params string[] includes)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
             query = query.Where(e => e.Id == id);
-
+            if (expression is not null)
+            {
+                query = query.Include(expression);
+            }
             if (includes != null)
             {
                 query = _takeIncludes(query, includes);
@@ -105,6 +108,17 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             if (includes != null) query = _takeIncludes(query, includes);
 
             return isTracking ? await query.FirstOrDefaultAsync() : await query.AsNoTracking().FirstOrDefaultAsync();
+        }
+        public async Task<ICollection<T>> GetCollection(Expression<Func<T, bool>> expression,int skip = 0, int take = 10, bool isTracking = false, bool iqnoreQuery = false, params string[] includes)
+        {
+            IQueryable<T> query = _table;
+            if (iqnoreQuery) query = query.IgnoreQueryFilters();
+            query = query.Where(expression);
+            if (skip> 0) query = query.Skip(skip);
+            if (take > 0) query = query.Take(take);
+            if (includes != null) query = _takeIncludes(query, includes);
+
+            return isTracking ? await query.ToListAsync() : await query.AsNoTracking().ToListAsync();
         }
         public void Update(T entity)
         {
@@ -134,12 +148,15 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             return await query.AnyAsync(expression);
         }
 
-        public async Task<T> GetEntityByIdWithSkipIncludes(int id, Expression<Func<T, object>> expression, bool isTracking = false, bool iqnoreQuery = false)
+        public async Task<T> GetEntityByIdWithSkipIncludes(int id, bool isTracking = false, bool iqnoreQuery = false, params Expression<Func<T, object>>[] expressions)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
             query = query.Where(e => e.Id == id);
-            query = query.Include(expression);
+            foreach (var expr  in expressions)
+            {
+                query = query.Include(expr);
+            }
             return isTracking ? await query.FirstOrDefaultAsync() : await query.AsNoTracking().FirstOrDefaultAsync();
         }
 

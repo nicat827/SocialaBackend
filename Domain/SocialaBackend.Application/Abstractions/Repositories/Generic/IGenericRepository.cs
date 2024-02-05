@@ -39,6 +39,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             int id,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expression = null,
             params string[] includes);
         Task<T> Get(
             Expression<Func<T, bool>> expression,
@@ -46,13 +47,13 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             bool iqnoreQuery = false,
             params string[] includes);
 
-
+        Task<ICollection<T>> GetCollection(Expression<Func<T, bool>> expression, int skip=0, int take=10, bool isTracking = false, bool iqnoreQuery = false, params string[] includes);
         void Update(T entity);
         void Delete(T entity);
         void SoftDelete(T entity);
         void RevertSoftDelete(T entity);
         Task SaveChangesAsync();
         Task<bool> IsExistEntityAsync(Expression<Func<T, bool>> expression);
-        Task<T> GetEntityByIdWithSkipIncludes(int id, Expression<Func<T, object>> expression, bool isTracking = false, bool iqnoreQuery = false);
+        Task<T> GetEntityByIdWithSkipIncludes(int id, bool isTracking = false, bool iqnoreQuery = false,params  Expression<Func<T, object>>[] expressions);
     }
 }

@@ -18,7 +18,7 @@ namespace SocialaBackend.Domain.Entities
         public string? AuthorImageUrl { get; set; }
         public int RepliesCount { get; set; }
         public int LikesCount { get; set; }
-        public ICollection<CommentLikeItem> Likes { get; set; } = new List<CommentLikeItem>();
+        public IList<CommentLikeItem> Likes { get; set; } = new List<CommentLikeItem>();
         public Post Post { get; set; } = null!;
         public ICollection<Reply> Replies { get; set; } = new List<Reply>();
     }
