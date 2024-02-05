@@ -35,7 +35,11 @@ namespace SocialaBackend.API.Controllers
             await _service.DeletePostAsync(id);
             return NoContent();
         }
-
+        [HttpGet("{username}")]
+        public async Task<IActionResult> Get(string username)
+        {
+            return Ok(await _service.GetPostsAsync(username));
+        }
         [HttpPut("recover/{id}")]
         public async Task<IActionResult> Recover(int id)
         {

@@ -315,9 +315,40 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _postRepository.SaveChangesAsync();
         }
 
-        public Task RecoverPostAsync(int id)
+        public async Task RecoverPostAsync(int id)
         {
-            throw new NotImplementedException();
+            AppUser? currentUser = await _userManager.Users.IgnoreQueryFilters().Where(u => u.UserName == _currentUserName).Include(u => u.Posts.Where(p => p.Id == id)).FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException("User is not defined!");
+            if (currentUser.Posts.FirstOrDefault() is null) throw new NotFoundException($"You dont have a post with id: {id}!");
+            Post? post = await _postRepository.GetByIdAsync(id, true, true, includes: new[] { "Likes",
+                                                                        "Comments", "Comments.Likes", "Comments.Replies", "Comments.Replies.Likes"});
+            if (post.IsDeleted)
+            {
+                post.IsDeleted = false;
+                foreach (var like in post.Likes)
+                {
+                    like.IsDeleted = false;
+                }
+                foreach (Comment comment in post.Comments)
+                {
+                    comment.IsDeleted =false;
+                    foreach (var commentLike in comment.Likes)
+                    {
+                        commentLike.IsDeleted = false;
+                    }
+                    foreach (Reply reply in comment.Replies)
+                    {
+                        reply.IsDeleted = false;
+                        foreach (var replyLike in reply.Likes)
+                        {
+                            replyLike.IsDeleted = false;
+                        }
+                    }
+                }
+            }
+
+            await _postRepository.SaveChangesAsync();
+           
         }
         private async Task<AppUser> _getUser(string username)
         {
