@@ -1,5 +1,6 @@
 ﻿using SocialaBackend.Domain.Entities.Base;
 using SocialaBackend.Domain.Entities.User;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,8 @@ namespace SocialaBackend.Domain.Entities
         //relational
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public int CommentsCount { get; set; }
-
+            
+        public PostType Type { get; set; }
         public ICollection<PostItem> Items { get; set; } = new List<PostItem>();
         public ICollection<PostLikeItem> Likes { get; set; } = new List<PostLikeItem>();
         public int LikesCount { get; set; }

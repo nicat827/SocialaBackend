@@ -11,6 +11,7 @@ namespace SocialaBackend.Application.Dtos
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
         public string UserName { get; set; } = null!;
+        public string? Bio { get; set; }
         public string? ImageUrl { get; set; }
         public string? BackgroundImage { get; set; }
         public bool IsPrivate { get; set; }

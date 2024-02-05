@@ -16,7 +16,8 @@ namespace SocialaBackend.Infrastructure.ServiceRegistration
     {
         public static void AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<IFIleService, FileService>();
+            services.AddScoped<IFileService, FileService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddAuthentication(opt =>
             {

@@ -1,4 +1,5 @@
 ﻿using SocialaBackend.Domain.Entities.Base;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,8 @@ namespace SocialaBackend.Domain.Entities
     public class PostItem:BaseEntity
     {
         public string SourceUrl { get; set; } = null!;
+
+        public PostType Type { get; set; }
 
         public int PostId { get; set; }
 

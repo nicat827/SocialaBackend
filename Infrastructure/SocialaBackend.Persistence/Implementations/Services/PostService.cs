@@ -10,6 +10,7 @@ using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Application.Exceptions.Forbidden;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class PostService : IPostService
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly IFIleService _fileService;
+        private readonly IFileService _fileService;
         private readonly IPostRepository _repository;
         private readonly IMapper _mapper;
         private readonly ICommentRepository _commentRepository;
@@ -32,7 +33,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly string _currentUserName;
 
         public PostService(UserManager<AppUser> userManager,
-            IFIleService fileService,
+            IFileService fileService,
             IPostRepository repository,
             IMapper mapper,
             ICommentRepository commentRepository,
@@ -183,9 +184,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 foreach (var file in dto.Files)
                 {
                     _fileService.CheckFileSize(file, 15);
-                    _fileService.ValidateFilesForPost(file);
-                    string type = file.ContentType.Substring(0, file.ContentType.IndexOf("/"));
-                    newPost.Items.Add(new PostItem { SourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s") });
+                    PostType  type = _fileService.ValidateFilesForPost(file);
+                    newPost.Items.Add(new PostItem { Type= type, SourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s") });
                 }
             }
         

@@ -24,16 +24,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class UserService : IUserService
     {
         private readonly IHttpContextAccessor _http;
-        private readonly IFIleService _fileService;
+        private readonly ICloudinaryService _cloudinary;
+        private readonly IFileService _fileService;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly string _currentUserName;
 
-        public UserService(IHttpContextAccessor http, IFIleService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
+        public UserService(IHttpContextAccessor http,ICloudinaryService cloudinary, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
             _http = http;
+            _cloudinary = cloudinary;
             _currentUserName = http.HttpContext.User.Identity.Name;
             _fileService = fileService;
             _userManager = userManager;
@@ -263,7 +265,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 }
                 throw new AppUserCreateException(sb.ToString());
             }
-            if (dto.Photo is not null) newUser.ImageUrl = await _fileService.CreateFileAsync(dto.Photo, "uploads", "users", "avatars");
+            if (dto.Photo is not null)
+            {
+                string imageUrl = await _fileService.CreateFileAsync(dto.Photo, "uploads", "users", "avatars");
+                string cloudinaryUrl = await _cloudinary.UploadFileAsync(imageUrl);
+                newUser.ImageUrl = cloudinaryUrl;
+            }
             await _userManager.AddToRoleAsync(newUser, UserRole.Member.ToString());
 
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(newUser, 15);

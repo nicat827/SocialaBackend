@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Infrastructure.Implementations
 {
-    internal class FileService:IFIleService
+    internal class FileService : IFileService
     {
         private readonly string _rootPath;
         public FileService(IWebHostEnvironment env)
@@ -35,7 +35,7 @@ namespace SocialaBackend.Infrastructure.Implementations
                     break;
             }
         }
-        public  void CheckFileSize(IFormFile file, int maxSize, FileSize type = FileSize.Mb)
+        public void CheckFileSize(IFormFile file, int maxSize, FileSize type = FileSize.Mb)
         {
             switch (type)
             {
@@ -52,10 +52,10 @@ namespace SocialaBackend.Infrastructure.Implementations
             }
         }
 
-        public async Task<string> CreateFileAsync(IFormFile file,params string[] folders)
+        public async Task<string> CreateFileAsync(IFormFile file, params string[] folders)
         {
             string fileName = Guid.NewGuid().ToString() + file.FileName.Substring(file.FileName.LastIndexOf("."));
-            string path = _generatePath(fileName, folders);
+            string path = GeneratePath(fileName, folders);
 
             using (FileStream stream = new FileStream(path, FileMode.Create))
             {
@@ -66,10 +66,10 @@ namespace SocialaBackend.Infrastructure.Implementations
 
         public void DeleteFile(string fileName, params string[] folders)
         {
-            string path = _generatePath(fileName, folders);
+            string path = GeneratePath(fileName, folders);
             if (File.Exists(path)) File.Delete(path);
         }
-        private string _generatePath(string fileName, params string[] folders)
+        public string GeneratePath(string fileName, params string[] folders)
         {
             string path = _rootPath;
             foreach (var folder in folders)
@@ -79,9 +79,12 @@ namespace SocialaBackend.Infrastructure.Implementations
             return Path.Combine(path, fileName);
         }
 
-        public void ValidateFilesForPost(IFormFile file)
+        public PostType ValidateFilesForPost(IFormFile file)
         {
-            if (!file.ContentType.Contains("video/") && !file.ContentType.Contains("image/")) throw new FileValidationException("Invalid upload for creating post!");
+            if (file.ContentType.Contains("video/")) return PostType.Video;
+            if (file.ContentType.Contains("image/")) return PostType.Image;
+            throw new FileValidationException("Invalid upload for creating post!");
         }
+
     }
 }

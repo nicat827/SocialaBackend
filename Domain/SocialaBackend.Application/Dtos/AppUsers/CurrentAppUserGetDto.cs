@@ -11,6 +11,8 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public string Name { get; set; }
         public string Surname { get; set; }
         public string UserName { get; set; }
+        public string? Bio { get; set; }
+
         public string? ImageUrl { get; set; }
         public bool IsPrivate { get; set; }
         public ICollection<FollowGetDto> Follows { get; set; } = new List<FollowGetDto>();
