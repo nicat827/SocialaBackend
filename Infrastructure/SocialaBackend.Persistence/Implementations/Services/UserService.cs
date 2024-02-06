@@ -24,7 +24,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class UserService : IUserService
     {
         private readonly IHttpContextAccessor _http;
-        private readonly ICloudinaryService _cloudinary;
+        private readonly ICloudinaryService _cloudinaryService;
         private readonly IFileService _fileService;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
@@ -32,10 +32,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly SignInManager<AppUser> _signInManager;
         private readonly string _currentUserName;
 
-        public UserService(IHttpContextAccessor http,ICloudinaryService cloudinary, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
+        public UserService(IHttpContextAccessor http,ICloudinaryService cloudinaryService, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
             _http = http;
-            _cloudinary = cloudinary;
+            _cloudinaryService = cloudinaryService;
             _currentUserName = http.HttpContext.User.Identity.Name;
             _fileService = fileService;
             _userManager = userManager;
@@ -268,7 +268,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (dto.Photo is not null)
             {
                 string imageUrl = await _fileService.CreateFileAsync(dto.Photo, "uploads", "users", "avatars");
-                string cloudinaryUrl = await _cloudinary.UploadFileAsync(imageUrl);
+                string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl, "uploads", "users", "avatars");
                 newUser.ImageUrl = cloudinaryUrl;
             }
             await _userManager.AddToRoleAsync(newUser, UserRole.Member.ToString());

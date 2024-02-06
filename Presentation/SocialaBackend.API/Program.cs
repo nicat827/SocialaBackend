@@ -20,6 +20,8 @@ builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
     
     build.WithOrigins("http://localhost:5173").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 }));
+
+
 builder.Services.AddSwaggerGen(opt =>
 {
     opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });

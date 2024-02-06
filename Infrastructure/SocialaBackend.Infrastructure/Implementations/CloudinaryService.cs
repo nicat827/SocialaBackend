@@ -14,26 +14,24 @@ namespace SocialaBackend.Infrastructure.Implementations
 {
     internal class CloudinaryService : ICloudinaryService
     {
-        private readonly IConfiguration _configuration;
-        private readonly IWebHostEnvironment _env;
+        private readonly Cloudinary _cloudinary;
         private readonly IFileService _fileService;
 
-        public CloudinaryService(IConfiguration configuration, IWebHostEnvironment env, IFileService fileService)
+        public CloudinaryService(IConfiguration configuration, Cloudinary cloudinary, IFileService fileService)
         {
             _configuration = configuration;
-            _env = env;
+            _cloudinary = cloudinary;
             _fileService = fileService;
         }
         public async Task<string> UploadFileAsync(string imageUrl, params string[] folders)
         {
-            var cloudinaryAccount = new Account(_configuration["Cloudinary:CloudName"], _configuration["Cloudinary:ApiKey"], _configuration["Cloudinary:ApiSecret"]);
-            var cloudinary = new Cloudinary(cloudinaryAccount);
+            
 
             var uploadParams = new ImageUploadParams()
             {
-                File = new FileDescription(_fileService.GeneratePath(imageUrl, "uploads", "users", "avatars")),
+                File = new FileDescription(_fileService.GeneratePath(imageUrl, folders)),
             };
-            var uploadResult = await cloudinary.UploadAsync(uploadParams);
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
             if (uploadResult.Error != null) throw new CloudinaryFileUploadException(uploadResult.Error.Message);
             return uploadResult.SecureUrl.ToString();
