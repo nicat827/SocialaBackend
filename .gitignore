@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Presentation/SocialaBackend.API/wwwroot/uploads/posts
+/Presentation/SocialaBackend.API/wwwroot/uploads/users/avatars
