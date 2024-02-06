@@ -7,6 +7,7 @@ using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Domain.Entities.User;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,16 +19,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class SettingsService : ISettingsService
     {
         private readonly string _currentUsername;
+        private readonly ICloudinaryService _cloudinaryService;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
+        private readonly IFileService _fileService;
 
-        public SettingsService(IHttpContextAccessor http, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService)
+        public SettingsService(IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
         {
             _currentUsername = http.HttpContext.User.Identity.Name;
+            _cloudinaryService = cloudinaryService;
             _userManager = userManager;
             _mapper = mapper;
             _emailService = emailService;
+            _fileService = fileService;
         }
         public async Task<SettingsDescriptionGetDto> GetDescriptionAsync()
         {
@@ -47,9 +52,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
             currentUser.Bio = dto.Bio;
             currentUser.Gender = dto.Gender;
             if (currentUser.Email != dto.Email)
-            {
                 if (await _userManager.Users.AnyAsync(u => u.Email == dto.Email))
                     throw new UserAlreadyExistException($"User with email: {dto.Email} already exists!");
+
+            if (dto.Photo is not null) await _createAvatar(dto.Photo, currentUser);
+            if (currentUser.Email != dto.Email)
+            {
                 currentUser.Email = dto.Email;
                 currentUser.EmailConfirmed = false;
 
@@ -63,11 +71,42 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(currentUser);
         }
 
+        public async Task<string> ChangeAvatarAsync(IFormFile photo)
+        {
+            AppUser user = await _getUser();
+            await _createAvatar(photo, user);
+            await _userManager.UpdateAsync(user);
+            return user.ImageUrl;
+        } 
+        public async Task<string?> ChangeBioAsync(string? bio)
+        {
+            AppUser user = await _getUser();
+            user.Bio = bio;
+            await _userManager.UpdateAsync(user);
+            return bio;
+
+        }
+
         private async Task<AppUser> _getUser()
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUsername);
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
             return user;
         }
+
+        private async Task _createAvatar(IFormFile avatar, AppUser currentUser)
+        {
+            _fileService.CheckFileType(avatar, FileType.Image);
+            _fileService.CheckFileSize(avatar, 2);
+            if (currentUser.ImageUrl is not null)
+            {
+                _fileService.DeleteFile(currentUser.ImageUrl, "uploads", "users", "avatars");
+            }
+            string imageUrl = await _fileService.CreateFileAsync(avatar, "uploads", "users", "avatars");
+            string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl, FileType.Image, "uploads", "users", "avatars");
+            currentUser.ImageUrl = cloudinaryUrl;
+            
+        }
+
     }
 }

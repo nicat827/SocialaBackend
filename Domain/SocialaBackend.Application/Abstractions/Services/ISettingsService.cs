@@ -1,4 +1,5 @@
-﻿using SocialaBackend.Application.Dtos;
+﻿using Microsoft.AspNetCore.Http;
+using SocialaBackend.Application.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,9 @@ namespace SocialaBackend.Application.Abstractions.Services
     {
 
         Task<SettingsDescriptionGetDto> GetDescriptionAsync();
+        Task<string> ChangeAvatarAsync(IFormFile photo);
+
+        Task<string?> ChangeBioAsync(string? bio);
 
         Task PostDescriptionAsync(SettingsDescriptionPostDto dto);
     }

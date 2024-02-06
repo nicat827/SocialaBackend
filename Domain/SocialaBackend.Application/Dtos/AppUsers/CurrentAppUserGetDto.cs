@@ -1,4 +1,5 @@
 ﻿using SocialaBackend.Domain.Entities;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,11 @@ namespace SocialaBackend.Application.Dtos.AppUsers
 
         public string? Bio { get; set; }
 
+        public string? FacebookLink { get; set; }
+        public string? GithubLink { get; set; }
+        public string? InstagramLink { get; set; }
+
+        public Gender Gender { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsPrivate { get; set; }
         public ICollection<FollowGetDto> Follows { get; set; } = new List<FollowGetDto>();
