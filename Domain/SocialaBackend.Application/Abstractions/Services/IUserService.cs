@@ -10,7 +10,8 @@ namespace SocialaBackend.Application.Abstractions.Services
 {
     public interface IUserService
     {
-        Task<AppUserRegisterResponseDto> RegisterAsync(AppUserRegisterDto dto);
+        Task RegisterAsync(AppUserRegisterDto dto);
+        Task<AppUserRegisterResponseDto> ConfirmEmailAsync(string token, string email);
 
         Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto);
 

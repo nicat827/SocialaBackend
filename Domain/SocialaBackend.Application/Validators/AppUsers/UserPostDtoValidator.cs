@@ -31,6 +31,11 @@ namespace SocialaBackend.Application.Validators.Users
                 .MaximumLength(20).WithMessage(MAXLENGTH_MESS)
                 .MinimumLength(5).WithMessage(MINLENGTH_MESS)
                 .Matches("^[a-zA-Z0-9]+$").WithMessage(REGEX_MESS + " or digits!");
+            RuleFor(a => a.Email)
+             .NotEmpty().WithMessage(REQUIRED_MESS)
+             .MaximumLength(256).WithMessage(MAXLENGTH_MESS)
+             .MinimumLength(4).WithMessage(MINLENGTH_MESS)
+             .Matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$").WithMessage("Incorrect email!");
             RuleFor(a => a.Password)
                 .NotEmpty().WithMessage(REQUIRED_MESS)
                 .MaximumLength(100).WithMessage(MAXLENGTH_MESS)

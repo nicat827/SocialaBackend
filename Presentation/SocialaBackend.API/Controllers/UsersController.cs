@@ -19,18 +19,22 @@ namespace SocialaBackend.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _service;
-        private readonly IPostService _postService;
 
-        public UsersController(IUserService service, IPostService postService)
+        public UsersController(IUserService service)
         {
             _service = service;
-            _postService = postService;
         }
         [HttpPost("auth/register")]
         public async Task<IActionResult> Post([FromForm]AppUserRegisterDto dto)
         {
-            AppUserRegisterResponseDto res = await _service.RegisterAsync(dto);
-            return StatusCode(StatusCodes.Status201Created, res);
+            await _service.RegisterAsync(dto);
+            return StatusCode(StatusCodes.Status201Created);
+        }
+        [HttpPatch("auth/confirm")]
+        public async Task<IActionResult> Confirm([FromForm] string token, string email)
+        {
+           
+            return StatusCode(StatusCodes.Status201Created, await _service.ConfirmEmailAsync(token, email));
         }
         [HttpPost("auth/login")]
 

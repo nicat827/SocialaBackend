@@ -11,6 +11,8 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public string Name { get; set; }
         public string Surname { get; set; }
         public string UserName { get; set; }
+        public string Email { get; set; } = null!;
+
         public string? Bio { get; set; }
 
         public string? ImageUrl { get; set; }

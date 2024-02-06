@@ -26,7 +26,7 @@ namespace SocialaBackend.Infrastructure.Implementations
 
             smtpClient.Credentials = new NetworkCredential(_configuration["ApplicationEmail:Email"],
                                                            _configuration["ApplicationEmail:Password"]);
-            MailAddress from = new MailAddress(_configuration["ApplicationEmail:Email"], "Pronia");
+            MailAddress from = new MailAddress(_configuration["ApplicationEmail:Email"], "Socialite");
             MailAddress to = new MailAddress(receiver);
 
             MailMessage mail = new MailMessage(from, to);

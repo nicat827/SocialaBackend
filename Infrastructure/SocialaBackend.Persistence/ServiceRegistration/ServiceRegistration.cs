@@ -27,7 +27,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
                 opt.Password.RequiredLength = 8;
                 opt.Password.RequireNonAlphanumeric = true;
 
-                opt.User.RequireUniqueEmail = false;
+                opt.User.RequireUniqueEmail = true;
 
                 opt.Lockout.MaxFailedAccessAttempts = 5;
                 opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
