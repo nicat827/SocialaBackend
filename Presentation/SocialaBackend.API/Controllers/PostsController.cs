@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialaBackend.Application.Abstractions.Services;
@@ -11,6 +12,7 @@ namespace SocialaBackend.API.Controllers
     [Route("api/posts")]
     [Authorize]
     [ApiController]
+    [EnableCors]
     public class PostsController : ControllerBase
     {
         private readonly IPostService _service;
@@ -21,6 +23,7 @@ namespace SocialaBackend.API.Controllers
         }
        
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Post([FromForm]PostPostDto dto)
         {
 
@@ -48,12 +51,12 @@ namespace SocialaBackend.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id}/comment")]
+        [HttpPost("comment")]
         [Authorize]
-        public async Task<IActionResult> Post(int id, string text)
+        public async Task<IActionResult> Post(CommentPostDto dto)
         {
-            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.CommentAsync(id, text);
+            if (dto.Id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.CommentAsync(dto);
             return StatusCode(StatusCodes.Status201Created);
 
         }
@@ -68,12 +71,12 @@ namespace SocialaBackend.API.Controllers
 
         }
 
-        [HttpPost("comment/{id}/reply")]
+        [HttpPost("comment/reply")]
         [Authorize]
-        public async Task<IActionResult> Reply(int id, string text)
+        public async Task<IActionResult> Reply(ReplyPostDto dto)
         {
-            if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.ReplyCommentAsync(id, text);
+            if (dto.Id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            await _service.ReplyCommentAsync(dto);
             return StatusCode(StatusCodes.Status201Created);
 
         }

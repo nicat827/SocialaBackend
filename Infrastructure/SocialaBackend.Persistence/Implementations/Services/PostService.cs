@@ -53,11 +53,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _postRepository = postRepository;
         }
 
-        public async Task CommentAsync(int id, string text)
+        public async Task CommentAsync(CommentPostDto dto)
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Post post = await _postRepository.GetByIdAsync(id,true, includes:new[] { "Comments", "AppUser", "AppUser.Followers" });
+            Post post = await _postRepository.GetByIdAsync(dto.Id,true, includes:new[] { "Comments", "AppUser", "AppUser.Followers" });
             if (post is null) throw new NotFoundException("Post didnt found!");
             AppUser owner = post.AppUser;
 
@@ -68,7 +68,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             post.Comments.Add(new Comment
             {
-                Text = text,
+                Text = dto.Text,
                 AuthorImageUrl = user.ImageUrl,
                 Author = user.UserName
             });
@@ -131,11 +131,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             await _repository.SaveChangesAsync();
         }
-        public async Task ReplyCommentAsync(int id, string text)
+        public async Task ReplyCommentAsync(ReplyPostDto dto)
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Comment? comment = await _commentRepository.GetByIdAsync(id,true, includes: new[] { "Replies", "Post", "Post.AppUser", "Post.AppUser.Followers" });
+            Comment? comment = await _commentRepository.GetByIdAsync(dto.Id,true, includes: new[] { "Replies", "Post", "Post.AppUser", "Post.AppUser.Followers" });
             if (comment is null) throw new NotFoundException("Comment didnt found!");
             AppUser owner = comment.Post.AppUser;
             if (owner.IsPrivate)
@@ -145,7 +145,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             comment.Replies.Add(new Reply
             {
-                Text = text,
+                Text = dto.Text,
                 AuthorImageUrl = user.ImageUrl,
                 Author = user.UserName
             });

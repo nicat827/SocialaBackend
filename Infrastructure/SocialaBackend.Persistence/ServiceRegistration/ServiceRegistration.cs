@@ -45,6 +45,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             //services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
+            services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<AppDbContextInitializer>();
         }
     }
