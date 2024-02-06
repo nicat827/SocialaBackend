@@ -206,6 +206,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (user is null) throw new AppUserNotFoundException("Username, email or password is incorrect!", 400);
             }
 
+            if (!user.EmailConfirmed) throw new AppUserNotFoundException("You must confirm your email first!", 403);
             var res = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, true);
 
             if (res.IsLockedOut)
@@ -285,11 +286,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             
         }
 
-        public async Task<AppUserRegisterResponseDto> ConfirmEmailAsync(string token, string email)
+        public async Task<AppUserRegisterResponseDto> ConfirmEmailAsync(AppUserConfirmEmailDto dto)
         {
-            AppUser user = await _userManager.FindByEmailAsync(email) ?? throw new AppUserNotFoundException($"User with email {email} wasnt found!");
+            AppUser user = await _userManager.FindByEmailAsync(dto.Email) ?? throw new AppUserNotFoundException($"User with email {dto.Email} wasnt found!");
             if (user.EmailConfirmed) throw new Exception("Account already confirmed!");
-            var decodedToken = WebEncoders.Base64UrlDecode(token);
+            var decodedToken = WebEncoders.Base64UrlDecode(dto.Token);
             string normalToken = Encoding.UTF8.GetString(decodedToken);
             var res = await _userManager.ConfirmEmailAsync(user, normalToken);
             if (!res.Succeeded)

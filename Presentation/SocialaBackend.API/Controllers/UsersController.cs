@@ -30,11 +30,11 @@ namespace SocialaBackend.API.Controllers
             await _service.RegisterAsync(dto);
             return StatusCode(StatusCodes.Status201Created);
         }
-        [HttpPatch("auth/confirm")]
-        public async Task<IActionResult> Confirm([FromForm] string token, string email)
+        [HttpPost("auth/confirm")]
+        public async Task<IActionResult> Confirm([FromForm] AppUserConfirmEmailDto dto)
         {
            
-            return StatusCode(StatusCodes.Status201Created, await _service.ConfirmEmailAsync(token, email));
+            return StatusCode(StatusCodes.Status201Created, await _service.ConfirmEmailAsync(dto));
         }
         [HttpPost("auth/login")]
 
