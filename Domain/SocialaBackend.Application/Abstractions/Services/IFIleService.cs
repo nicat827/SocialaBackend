@@ -13,7 +13,7 @@ namespace SocialaBackend.Application.Abstractions.Services
     {
         void CheckFileType(IFormFile file, FileType type);
         void CheckFileSize(IFormFile file, int maxSize, FileSize type = FileSize.Mb);
-        PostType ValidateFilesForPost(IFormFile file);
+        FileType ValidateFilesForPost(IFormFile file);
 
         string GeneratePath(string imageUrl, params string[] folders);
         

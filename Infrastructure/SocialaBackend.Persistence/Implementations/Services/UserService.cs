@@ -268,7 +268,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (dto.Photo is not null)
             {
                 string imageUrl = await _fileService.CreateFileAsync(dto.Photo, "uploads", "users", "avatars");
-                string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl, "uploads", "users", "avatars");
+                string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl,FileType.Image, "uploads", "users", "avatars");
                 newUser.ImageUrl = cloudinaryUrl;
             }
             await _userManager.AddToRoleAsync(newUser, UserRole.Member.ToString());

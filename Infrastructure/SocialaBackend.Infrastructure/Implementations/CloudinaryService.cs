@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,20 +18,31 @@ namespace SocialaBackend.Infrastructure.Implementations
         private readonly Cloudinary _cloudinary;
         private readonly IFileService _fileService;
 
-        public CloudinaryService(IConfiguration configuration, Cloudinary cloudinary, IFileService fileService)
+        public CloudinaryService(Cloudinary cloudinary, IFileService fileService)
         {
-            _configuration = configuration;
             _cloudinary = cloudinary;
             _fileService = fileService;
         }
-        public async Task<string> UploadFileAsync(string imageUrl, params string[] folders)
+        public async Task<string> UploadFileAsync(string srcUrl, FileType type,  params string[] folders)
         {
-            
-
-            var uploadParams = new ImageUploadParams()
+            RawUploadParams uploadParams;
+            switch (type)
             {
-                File = new FileDescription(_fileService.GeneratePath(imageUrl, folders)),
-            };
+                case FileType.Image:
+                    uploadParams = new ImageUploadParams()
+                    {
+                        File = new FileDescription(_fileService.GeneratePath(srcUrl, folders)),
+                    };
+                    break;
+                case FileType.Video:
+                    uploadParams = new VideoUploadParams()
+                    {
+                        File = new FileDescription(_fileService.GeneratePath(srcUrl, folders)),
+                    };
+                    break;
+                default: throw new CloudinaryFileUploadException("Upload type of post is not supported!");
+
+            }
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
             if (uploadResult.Error != null) throw new CloudinaryFileUploadException(uploadResult.Error.Message);

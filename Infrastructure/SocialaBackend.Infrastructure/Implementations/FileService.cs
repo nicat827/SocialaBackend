@@ -79,10 +79,10 @@ namespace SocialaBackend.Infrastructure.Implementations
             return Path.Combine(path, fileName);
         }
 
-        public PostType ValidateFilesForPost(IFormFile file)
+        public FileType ValidateFilesForPost(IFormFile file)
         {
-            if (file.ContentType.Contains("video/")) return PostType.Video;
-            if (file.ContentType.Contains("image/")) return PostType.Image;
+            if (file.ContentType.Contains("video/")) return FileType.Video;
+            if (file.ContentType.Contains("image/")) return FileType.Image;
             throw new FileValidationException("Invalid upload for creating post!");
         }
 

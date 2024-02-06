@@ -27,7 +27,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IMapper _mapper;
         private readonly ICommentRepository _commentRepository;
         private readonly IReplyRepository _replyRepository;
-        private readonly ILikeRepository _likeRepository;
+        private readonly ICloudinaryService _cloudinaryService;
         private readonly IPostRepository _postRepository;
 
         private readonly string _currentUserName;
@@ -39,7 +39,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             ICommentRepository commentRepository,
             IReplyRepository replyRepository,
             IHttpContextAccessor http,
-            ILikeRepository likeRepository,
+            ICloudinaryService cloudinaryService,
             IPostRepository postRepository)
         {
             _userManager = userManager;
@@ -49,7 +49,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _currentUserName = http.HttpContext.User.Identity.Name;
             _commentRepository = commentRepository;
             _replyRepository = replyRepository;
-            _likeRepository = likeRepository;
+            _cloudinaryService = cloudinaryService;
             _postRepository = postRepository;
         }
 
@@ -183,9 +183,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (dto.Files is not null) {
                 foreach (var file in dto.Files)
                 {
-                    _fileService.CheckFileSize(file, 15);
-                    PostType  type = _fileService.ValidateFilesForPost(file);
-                    newPost.Items.Add(new PostItem { Type= type, SourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s") });
+                    _fileService.CheckFileSize(file, 100);
+                    FileType type = _fileService.ValidateFilesForPost(file);
+                    string localSourceUrl = await _fileService.CreateFileAsync(file, "uploads", "posts", $"{type}s");
+                    string cloudinarySrcUrl = await _cloudinaryService.UploadFileAsync(localSourceUrl, type, "uploads", "posts", $"{type}s");
+                    newPost.Items.Add(new PostItem { Type = type, SourceUrl = cloudinarySrcUrl });
                 }
             }
         

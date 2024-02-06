@@ -12,8 +12,7 @@ namespace SocialaBackend.Domain.Entities
     {
         public string SourceUrl { get; set; } = null!;
 
-        public PostType Type { get; set; }
-
+        public FileType Type { get; set; }
         public int PostId { get; set; }
 
         public Post Post { get; set; } = null!;
