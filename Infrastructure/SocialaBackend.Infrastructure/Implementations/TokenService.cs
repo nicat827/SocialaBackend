@@ -61,7 +61,7 @@ namespace SocialaBackend.Infrastructure.Implementations
                 accessToken,
                 token.ValidTo,
                 refreshToken,
-                token.ValidTo.AddMinutes(minutes / 2)
+                token.ValidTo.AddMinutes(minutes)
             );
         }
     }

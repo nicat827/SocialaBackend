@@ -78,6 +78,23 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(user);
             return user.ImageUrl;
         } 
+        public async Task<string> ChangeBackgroundAsync(IFormFile photo)
+        {
+            AppUser currentUser = await _getUser();
+
+            _fileService.CheckFileType(photo, FileType.Image);
+            _fileService.CheckFileSize(photo, 2);
+            if (currentUser.BackgroundImage is not null)
+            {
+                _fileService.DeleteFile(currentUser.BackgroundImage, "uploads", "users", "backgrounds");
+            }
+            string imageUrl = await _fileService.CreateFileAsync(photo, "uploads", "users", "backgrounds");
+            string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl, FileType.Image, "uploads", "users", "backgrounds");
+            currentUser.BackgroundImage = cloudinaryUrl;
+            await _userManager.UpdateAsync(currentUser);
+            return cloudinaryUrl;
+
+        }
         public async Task<string?> ChangeBioAsync(string? bio)
         {
             AppUser user = await _getUser();

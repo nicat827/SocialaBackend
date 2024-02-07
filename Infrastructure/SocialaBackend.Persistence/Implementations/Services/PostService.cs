@@ -53,7 +53,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _postRepository = postRepository;
         }
 
-        public async Task CommentAsync(CommentPostDto dto)
+        public async Task<CommentGetDto> CommentAsync(CommentPostDto dto)
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
@@ -66,14 +66,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                     throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            post.Comments.Add(new Comment
+            Comment newComment = new Comment
             {
                 Text = dto.Text,
                 AuthorImageUrl = user.ImageUrl,
                 Author = user.UserName
-            });
+            };
+
+            post.Comments.Add(newComment);
             post.CommentsCount++;
             await _postRepository.SaveChangesAsync();
+            return _mapper.Map<CommentGetDto>(newComment);
 
         }
         public async Task LikeReplyAsync(int id)
@@ -131,7 +134,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             await _repository.SaveChangesAsync();
         }
-        public async Task ReplyCommentAsync(ReplyPostDto dto)
+        public async Task<ReplyGetDto> ReplyCommentAsync(ReplyPostDto dto)
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
@@ -143,15 +146,16 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                     throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            comment.Replies.Add(new Reply
+            Reply newReply = new Reply
             {
                 Text = dto.Text,
                 AuthorImageUrl = user.ImageUrl,
                 Author = user.UserName
-            });
-          
+            };
+            comment.Replies.Add(newReply);
             comment.RepliesCount++;
             await _commentRepository.SaveChangesAsync();
+            return _mapper.Map<ReplyGetDto>(newReply);
 
         }
         public async Task<IEnumerable<ReplyGetDto>> GetRepliesAsync(int id, int? skip)

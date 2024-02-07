@@ -206,7 +206,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (user is null) throw new AppUserNotFoundException("Username, email or password is incorrect!", 400);
             }
 
-            if (!user.EmailConfirmed) throw new AppUserNotFoundException("You must confirm your email first!", 403);
+            if (!user.EmailConfirmed) throw new AppUserNotFoundException("You must confirm your email first!", 400);
             var res = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, true);
 
             if (res.IsLockedOut)
@@ -231,15 +231,19 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
                                                                         && u.RefreshTokenExpiresAt > DateTime.UtcNow);
+            Console.WriteLine(refreshToken + " VALIDDDDDDDDDDD");
             if (user is not null)
             {
                 user.RefreshToken = null;
                 user.RefreshTokenExpiresAt = null;
+                await _userManager.UpdateAsync(user);
             }
+            
         }
 
         public async Task<TokenResponseDto> RefreshAsync(string refreshToken)
         {
+            Console.WriteLine(refreshToken + " TOKENNNNNNNNNNNNNNNNNNNNNNNNN");
             AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
                                                                         && u.RefreshTokenExpiresAt > DateTime.UtcNow);
             if (user is null) throw new InvalidTokenException("Token is not valid!");
@@ -258,7 +262,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 _fileService.CheckFileSize(dto.Photo, 2);
             }
 
-            if (await _userManager.Users.AnyAsync(u => u.UserName == dto.Username)) throw new UserAlreadyExistException($"User with _currentUserName {dto.Username} already exists!");
+            if (await _userManager.Users.AnyAsync(u => u.UserName == dto.Username)) throw new UserAlreadyExistException($"User with username {dto.Username} already exists!");
             AppUser newUser = _mapper.Map<AppUser>(dto);
             var res = await _userManager.CreateAsync(newUser, dto.Password);
             if (!res.Succeeded)

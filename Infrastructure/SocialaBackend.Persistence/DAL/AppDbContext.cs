@@ -44,7 +44,7 @@ namespace SocialaBackend.Persistence.DAL
                 switch (data.State)
                 {
                     case EntityState.Added:
-                        data.Entity.CreatedAt = DateTime.UtcNow;
+                        data.Entity.CreatedAt = DateTime.Now;
                         break;
 
                 }

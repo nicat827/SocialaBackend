@@ -13,6 +13,7 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         Task<SettingsDescriptionGetDto> GetDescriptionAsync();
         Task<string> ChangeAvatarAsync(IFormFile photo);
+        Task<string> ChangeBackgroundAsync(IFormFile photo);
 
         Task<string?> ChangeBioAsync(string? bio);
 

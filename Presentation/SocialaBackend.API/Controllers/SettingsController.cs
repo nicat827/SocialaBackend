@@ -43,5 +43,14 @@ namespace SocialaBackend.API.Controllers
         {
             return Ok(await _service.ChangeBioAsync(bio));
         }
+
+        [HttpPut("background")]
+        [Authorize]
+        public async Task<IActionResult> UploadBackground(IFormFile photo)
+        {
+            return Ok(await _service.ChangeBackgroundAsync(photo));
+        }
+
+
     }
 }
