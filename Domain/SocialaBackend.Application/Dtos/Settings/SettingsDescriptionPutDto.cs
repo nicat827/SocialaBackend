@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public class SettingsDescriptionPostDto
+    public class SettingsDescriptionPutDto
     {
         public IFormFile? Photo { get; set; }
         public string UserName { get; set; } = null!;

@@ -13,7 +13,7 @@ namespace SocialaBackend.Application.MappingProfiles
     {
         public SettingsProfile()
         {
-            CreateMap<SettingsDescriptionPostDto, AppUser>();
+            CreateMap<SettingsDescriptionPutDto, AppUser>();
             CreateMap<AppUser, SettingsDescriptionGetDto>();
         }
     }

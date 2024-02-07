@@ -14,9 +14,12 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<SettingsDescriptionGetDto> GetDescriptionAsync();
         Task<string> ChangeAvatarAsync(IFormFile photo);
         Task<string> ChangeBackgroundAsync(IFormFile photo);
+        Task<SettingsSocialPutDto> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto);
+
+        Task<SettingsNotifyPutDto> ChangeNotifySettingsAsync(SettingsNotifyPutDto dto);
 
         Task<string?> ChangeBioAsync(string? bio);
 
-        Task PostDescriptionAsync(SettingsDescriptionPostDto dto);
+        Task PostDescriptionAsync(SettingsDescriptionPutDto dto);
     }
 }

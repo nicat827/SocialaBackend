@@ -40,7 +40,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return _mapper.Map<SettingsDescriptionGetDto>(user);
         }
 
-        public async Task PostDescriptionAsync(SettingsDescriptionPostDto dto)
+        public async Task PostDescriptionAsync(SettingsDescriptionPutDto dto)
         {
             AppUser currentUser = await _getUser();
             if (currentUser.UserName != dto.UserName)
@@ -95,6 +95,27 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return cloudinaryUrl;
 
         }
+        public async Task<SettingsSocialPutDto> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto)
+        {
+            AppUser user = await _getUser();
+            user.FacebookLink = dto.FacebookLink;
+            user.GithubLink = dto.GithubLink;
+            user.InstagramLink = dto.InstagramLink;
+            await _userManager.UpdateAsync(user);
+            return dto;
+        }
+
+        public async Task<SettingsNotifyPutDto> ChangeNotifySettingsAsync(SettingsNotifyPutDto dto)
+        {
+            AppUser user = await _getUser();
+            user.FollowerNotify = dto.FollowerNotify;
+            user.PhotoLikeNotify = dto.PhotoLikeNotify;
+            user.PostLikeNotify = dto.PostLikeNotify;
+            await _userManager.UpdateAsync(user);
+            return dto;
+
+        }
+
         public async Task<string?> ChangeBioAsync(string? bio)
         {
             AppUser user = await _getUser();

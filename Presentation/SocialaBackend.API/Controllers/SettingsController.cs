@@ -51,6 +51,23 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.ChangeBackgroundAsync(photo));
         }
 
+        [HttpPut("social")]
+        [Authorize]
+
+        public async Task<IActionResult> ChangeSocialLinks(SettingsSocialPutDto dto)
+        {
+            return Ok(await _service.ChangeSocialMediaLinksAsync(dto));
+        }
+        [HttpPut("notification")]
+        [Authorize]
+
+        public async Task<IActionResult> ChangeNotificationSettings(SettingsNotifyPutDto dto)
+        {
+            return Ok(await _service.ChangeNotifySettingsAsync(dto));
+        }
+
+
+
 
     }
 }

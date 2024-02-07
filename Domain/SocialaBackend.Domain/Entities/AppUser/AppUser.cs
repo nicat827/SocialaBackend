@@ -22,7 +22,7 @@ namespace SocialaBackend.Domain.Entities.User
         public bool IsPrivate { get; set; }
 
         public string? BackgroundImage { get; set; }    
-        public string? FeacebookLink { get; set; }    
+        public string? FacebookLink { get; set; }    
         public string? GithubLink { get; set; }    
         public string? InstagramLink { get; set; }
 
