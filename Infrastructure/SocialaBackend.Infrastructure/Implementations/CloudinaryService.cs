@@ -31,7 +31,10 @@ namespace SocialaBackend.Infrastructure.Implementations
                 case FileType.Image:
                     uploadParams = new ImageUploadParams()
                     {
+                       
                         File = new FileDescription(_fileService.GeneratePath(srcUrl, folders)),
+                        
+                        
                     };
                     break;
                 case FileType.Video:

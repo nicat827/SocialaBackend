@@ -27,8 +27,8 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> Post([FromForm]PostPostDto dto)
         {
 
-            await _service.CreatePostAsync(dto);
-            return StatusCode(StatusCodes.Status201Created);
+            
+            return StatusCode(StatusCodes.Status201Created, await _service.CreatePostAsync(dto));
         }
 
         [HttpDelete("{id}")]

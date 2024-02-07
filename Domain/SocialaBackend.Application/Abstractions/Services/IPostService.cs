@@ -9,7 +9,7 @@ namespace SocialaBackend.Application.Abstractions.Services
 {
     public interface IPostService
     {
-        Task CreatePostAsync(PostPostDto dto);
+        Task<PostGetDto> CreatePostAsync(PostPostDto dto);
 
         Task<ICollection<PostGetDto>> GetPostsAsync(string username);
 

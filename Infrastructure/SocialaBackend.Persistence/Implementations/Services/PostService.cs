@@ -174,7 +174,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         }
 
 
-        public async Task CreatePostAsync(PostPostDto dto)
+        public async Task<PostGetDto> CreatePostAsync(PostPostDto dto)
         {
             if (dto.Description is null && dto.Files is null) throw new PostCreateException("At least one of the fields is required!");
             AppUser user = await _getUser(_currentUserName);
@@ -198,6 +198,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             await _repository.CreateAsync(newPost);
             await _repository.SaveChangesAsync();
+            return _mapper.Map<PostGetDto>(newPost);
 
         }
 
