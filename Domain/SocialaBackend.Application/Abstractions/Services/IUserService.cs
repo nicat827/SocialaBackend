@@ -30,6 +30,8 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ICollection<FollowGetDto>> GetFollowersAsync(string username,int? skip);
         Task<ICollection<FollowGetDto>> GetFollowsAsync(string username,int? skip);
 
+        Task<bool> IsPrivateAsync(string username);
+
 
     }
 

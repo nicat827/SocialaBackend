@@ -20,6 +20,8 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         Task<string?> ChangeBioAsync(string? bio);
 
+        Task LikeAvatarAsync(string username);
+
         Task PostDescriptionAsync(SettingsDescriptionPutDto dto);
     }
 }

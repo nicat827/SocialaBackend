@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialaBackend.Persistence.DAL;
 
@@ -11,9 +12,10 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240207140820_AppUserFacebookLinkNameCorrected")]
+    partial class AppUserFacebookLinkNameCorrected
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,35 +155,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("SocialaBackend.Domain.Entities.AvatarLikeItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("AppUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppUserId");
-
-                    b.ToTable("AvatarLikeItems");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Comment", b =>
@@ -338,41 +311,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.HasIndex("AppUserId");
 
                     b.ToTable("FollowItem");
-                });
-
-            modelBuilder.Entity("SocialaBackend.Domain.Entities.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("AppUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SourceUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppUserId");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Post", b =>
@@ -714,17 +652,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SocialaBackend.Domain.Entities.AvatarLikeItem", b =>
-                {
-                    b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
-                        .WithMany("LikedAvatars")
-                        .HasForeignKey("AppUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AppUser");
-                });
-
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Comment", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.Post", "Post")
@@ -768,17 +695,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
                         .WithMany("Follows")
-                        .HasForeignKey("AppUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AppUser");
-                });
-
-            modelBuilder.Entity("SocialaBackend.Domain.Entities.Notification", b =>
-                {
-                    b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
-                        .WithMany("Notifications")
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -880,15 +796,11 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.Navigation("Follows");
 
-                    b.Navigation("LikedAvatars");
-
                     b.Navigation("LikedComments");
 
                     b.Navigation("LikedPosts");
 
                     b.Navigation("LikedReplies");
-
-                    b.Navigation("Notifications");
 
                     b.Navigation("Posts");
                 });

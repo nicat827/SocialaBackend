@@ -26,7 +26,7 @@ namespace SocialaBackend.API.Controllers
         }
         [HttpPost("description")]
         [Authorize]
-        public async Task<IActionResult> PostDescription([FromForm]SettingsDescriptionPostDto dto)
+        public async Task<IActionResult> PostDescription([FromForm]SettingsDescriptionPutDto dto)
         {
             await _service.PostDescriptionAsync(dto);
             return NoContent();
@@ -64,6 +64,14 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> ChangeNotificationSettings(SettingsNotifyPutDto dto)
         {
             return Ok(await _service.ChangeNotifySettingsAsync(dto));
+        }
+        [HttpPut("likePhoto")]
+        [Authorize]
+
+        public async Task<IActionResult> LikePhoto(string username)
+        {
+            await _service.LikeAvatarAsync(username);
+            return NoContent();
         }
 
 

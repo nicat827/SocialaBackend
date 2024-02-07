@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace SocialaBackend.Application.Dtos.AppUsers
 {
     public class CurrentAppUserGetDto {
-        public string Name { get; set; }
-        public string Surname { get; set; }
-        public string UserName { get; set; }
+        public string Name { get; set; } = null!;
+        public string Surname { get; set; } = null!;
+        public string UserName { get; set; } = null!;
         public string Email { get; set; } = null!;
 
         public string? Bio { get; set; }
@@ -23,6 +23,8 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public Gender Gender { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsPrivate { get; set; }
+        public ICollection<NotificationsGetDto> Notifications { get; set; } = new List<NotificationsGetDto>();
+        public IEnumerable<string> LikedAvatarsUsernames { get; set; } = new List<string>();
         public ICollection<FollowGetDto> Follows { get; set; } = new List<FollowGetDto>();
         public ICollection<FollowGetDto> Followers { get; set; } = new List<FollowGetDto>();
         public ICollection<AppUserLikesGetDto> LikedPosts { get; set; } = new List<AppUserLikesGetDto>();

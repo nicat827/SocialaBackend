@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Razor.Hosting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.AppUsers;
@@ -24,6 +25,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class UserService : IUserService
     {
+        private readonly INotificationRepository _notificationRepository;
         private readonly IEmailService _emailService;
         private readonly IHttpContextAccessor _http;
         private readonly ICloudinaryService _cloudinaryService;
@@ -35,8 +37,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly SignInManager<AppUser> _signInManager;
         private readonly string _currentUserName;
 
-        public UserService(IEmailService emailService, IHttpContextAccessor http, ICloudinaryService cloudinaryService, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
+        public UserService(INotificationRepository notificationRepository, IEmailService emailService, IHttpContextAccessor http, ICloudinaryService cloudinaryService, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
+            _notificationRepository = notificationRepository;
             _emailService = emailService;
             _http = http;
             _cloudinaryService = cloudinaryService;
@@ -61,6 +64,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (followItem is null) throw new NotFoundException($"Follow to {user.UserName} wasnt defined!");
             item.IsConfirmed = true;
             followItem.IsConfirmed = true;
+            Notification newNotification = new Notification
+            {
+                AppUser = follower,
+                Title = "Follow Confirmed!",
+                Text = $"{user.UserName} accepted your follow",
+                SourceUrl = user.ImageUrl
+            };
+            await _notificationRepository.CreateAsync(newNotification);
             await _userManager.UpdateAsync(user);
             await _userManager.UpdateAsync(follower);
         }
@@ -131,7 +142,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 UserName = follower.UserName,
                 IsConfirmed = user.IsPrivate ? false : true
             });
-
+            Notification newNotification = new Notification
+            {
+                AppUser = user,
+                Title = "New Follow!",
+                Text = user.IsPrivate ? $"{user.UserName} sent to you follow request" : $"{user.UserName} followed to you",
+                SourceUrl = user.ImageUrl
+            };
+            await _notificationRepository.CreateAsync(newNotification);       
             await _userManager.UpdateAsync(user);
 
         }
@@ -140,19 +158,23 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == username)
-                .Include(u => u.Followers.Where(f => f.IsConfirmed == true))
-                .Include(u => u.Follows.Where(f => f.IsConfirmed == true))
+                .Include(u => u.Followers)
+                .Include(u => u.Follows)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
             AppUserGetDto dto = _mapper.Map<AppUserGetDto>(user);
-            dto.FollowersCount = user.Followers.Count;
-            dto.FollowsCount = user.Follows.Count;
+            dto.FollowersCount = user.Followers.Where(f => f.IsConfirmed == true).Count();
+            dto.FollowsCount = user.Follows.Where(f => f.IsConfirmed == true).Count();
+            dto.FollowerRequestCount = user.Followers.Where(f => f.IsConfirmed == false).Count();
+            dto.FollowsRequestCount = user.Follows.Where(f => f.IsConfirmed == false).Count();
             return dto;
         }
 
         public async Task<CurrentAppUserGetDto> GetCurrentUserAsync()
         {
             AppUser? user = await _userManager.Users
+                .Include(u => u.LikedAvatars)
+                .Include(u => u.Notifications)
                 .Include(u => u.Follows)
                 .Include(u => u.Followers)
                 .Include(u => u.LikedReplies)
@@ -164,9 +186,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
             CurrentAppUserGetDto dto = _mapper.Map<CurrentAppUserGetDto>(user);
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
+            dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
             return dto;
         }
-
+        public async Task<bool> IsPrivateAsync(string username)
+        {
+            AppUser user = await _userManager.FindByNameAsync(username);
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt found!");
+            return user.IsPrivate;
+        }
         public async Task<ICollection<FollowGetDto>> GetFollowersAsync(string username, int? skip)
         {
 
@@ -306,6 +334,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 }
                 throw new EmailTokenConfirmException(sb.ToString());
             }
+            Notification newNotification = new Notification
+            {
+                Title = "Account confirmed!",
+                Text = $"Thank you! You succesfully confirmed {dto.Email}",
+                AppUser = user
+            };
+            await _notificationRepository.CreateAsync(newNotification);
+            await _notificationRepository.SaveChangesAsync();
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
             user.RefreshToken = tokens.RefreshToken;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;

@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using System;
@@ -19,15 +21,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class SettingsService : ISettingsService
     {
         private readonly string _currentUsername;
+        private readonly INotificationRepository _notificationRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
         private readonly IFileService _fileService;
 
-        public SettingsService(IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
+        public SettingsService(INotificationRepository notificationRepository, IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
         {
             _currentUsername = http.HttpContext.User.Identity.Name;
+            _notificationRepository = notificationRepository;
             _cloudinaryService = cloudinaryService;
             _userManager = userManager;
             _mapper = mapper;
@@ -51,6 +55,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             currentUser.Bio = dto.Bio;
             currentUser.Gender = dto.Gender;
+            currentUser.IsPrivate = dto.IsPrivate;
             if (currentUser.Email != dto.Email)
                 if (await _userManager.Users.AnyAsync(u => u.Email == dto.Email))
                     throw new UserAlreadyExistException($"User with email: {dto.Email} already exists!");
@@ -114,6 +119,42 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(user);
             return dto;
 
+        }
+        public async Task LikeAvatarAsync(string username)
+        {
+            AppUser? user = await _userManager.Users.Where(u => u.UserName == username).FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt found!");
+
+            if (user.ImageUrl is not null)
+            {
+                AppUser? currentUser = await _userManager.Users
+                    .Where(u => u.UserName == _currentUsername)
+                    .Include(u => u.LikedAvatars)
+                    .FirstOrDefaultAsync();
+                if (currentUser is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
+                AvatarLikeItem? likeItem = currentUser.LikedAvatars.FirstOrDefault(a => a.UserName == user.UserName);
+                if (likeItem is not null)
+                {
+                    currentUser.LikedAvatars.Remove(likeItem);
+                }
+                else
+                {
+                    currentUser.LikedAvatars.Add(new AvatarLikeItem { AppUserId = user.Id, UserName = user.UserName });
+                    if (user.PhotoLikeNotify && user.UserName != _currentUsername)
+                    {
+                        await _notificationRepository.CreateAsync(new Notification
+                        {
+                            AppUser = user,
+                            Title = "Avatar Liked!",
+                            Text = $"User {_currentUsername} liked your avatar",
+                            SourceUrl = user.ImageUrl
+                        });
+                       
+                    }
+                }
+                await _userManager.UpdateAsync(currentUser);
+            }
+            else throw new NotFoundException("Avatar didnt found");
         }
 
         public async Task<string?> ChangeBioAsync(string? bio)

@@ -35,6 +35,8 @@ namespace SocialaBackend.Domain.Entities.User
         public DateTime? RefreshTokenExpiresAt { get; set; }
 
         //relational
+        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public ICollection<AvatarLikeItem> LikedAvatars { get; set; } = new List<AvatarLikeItem>();
         public ICollection<FollowItem> Follows { get; set; } = new List<FollowItem>();
         public ICollection<FollowerItem> Followers { get; set; } = new List<FollowerItem>();
         public ICollection<Post> Posts { get; set; } = new List<Post>();

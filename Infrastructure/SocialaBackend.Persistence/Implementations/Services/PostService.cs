@@ -28,6 +28,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly ICommentRepository _commentRepository;
         private readonly IReplyRepository _replyRepository;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly INotificationRepository _notificationRepository;
         private readonly IPostRepository _postRepository;
 
         private readonly string _currentUserName;
@@ -40,6 +41,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             IReplyRepository replyRepository,
             IHttpContextAccessor http,
             ICloudinaryService cloudinaryService,
+            INotificationRepository notificationRepository,
             IPostRepository postRepository)
         {
             _userManager = userManager;
@@ -50,6 +52,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _commentRepository = commentRepository;
             _replyRepository = replyRepository;
             _cloudinaryService = cloudinaryService;
+            _notificationRepository = notificationRepository;
             _postRepository = postRepository;
         }
 
@@ -194,7 +197,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     newPost.Items.Add(new PostItem { Type = type, SourceUrl = cloudinarySrcUrl });
                 }
             }
-        
+            
 
             await _repository.CreateAsync(newPost);
             await _repository.SaveChangesAsync();
@@ -258,8 +261,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task LikePostAsync(int id)
         {
-           
             Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "AppUser", "AppUser.Followers" });
+           
             if (post is null) throw new NotFoundException("Post didnt found!");
             if (post.AppUser.IsPrivate)
             {
@@ -273,6 +276,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 AppUser user = await _getUser(_currentUserName);
                 post.Likes.Add(new PostLikeItem {AppUserId=user.Id, Username = user.UserName, ImageUrl = user.ImageUrl, Name = user.Name, Surname = user.Surname });
                 post.LikesCount++;
+                if (user.PostLikeNotify && user.UserName != post.AppUser.UserName)
+                {
+                    Notification newNotification = new Notification
+                    {
+                        AppUser = post.AppUser,
+                        Title = "Post Liked!",
+                        Text = $"{user.UserName} liked your post!",
+                        SourceUrl = post.Items.FirstOrDefault(i => i.Type == FileType.Image)?.SourceUrl
+                    };
+                    await _notificationRepository.CreateAsync(newNotification);
+                }
             }
             else 
             {

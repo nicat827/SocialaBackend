@@ -22,6 +22,8 @@ namespace SocialaBackend.Application.Dtos
         public bool IsPrivate { get; set; }
         public int FollowsCount { get; set; }
         public int FollowersCount { get; set; }
+        public int FollowsRequestCount { get; set; }
+        public int FollowerRequestCount { get; set; }
     }
     
 }

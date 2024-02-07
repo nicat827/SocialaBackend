@@ -20,6 +20,8 @@ namespace SocialaBackend.Persistence.DAL
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Reply> Replies { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<AvatarLikeItem> AvatarLikeItems { get; set; }
         public DbSet<PostLikeItem> PostLikeItems { get; set; }
         public DbSet<CommentLikeItem> CommentLikeItems { get; set; }
         public DbSet<PostItem> PostItems { get; set; }

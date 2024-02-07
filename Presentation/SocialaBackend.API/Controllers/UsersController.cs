@@ -99,8 +99,12 @@ namespace SocialaBackend.API.Controllers
             await _service.ConfirmFollowerAsync(id);
             return Ok();
         }
-
+        [HttpGet("users/checkPrivate/{username}")]
         [Authorize]
+        public async Task<IActionResult> GetType(string username)
+        {
+            return Ok(await _service.IsPrivateAsync(username));
+        }
         [HttpDelete("users/followers/cancel/{username}")]
         public async Task<IActionResult> CancelFollower(string username)
         {
