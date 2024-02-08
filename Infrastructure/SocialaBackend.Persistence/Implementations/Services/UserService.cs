@@ -115,7 +115,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             currentUser.Follows.Remove(item);
             await _userManager.UpdateAsync(currentUser);
         }
-        public async Task FollowAsync(string followToUsername)
+        public async Task<FollowGetDto> FollowAsync(string followToUsername)
         {
             if (_currentUserName == followToUsername) throw new WrongFollowException("You cant follow to yourself!");
             AppUser? user = await _userManager.Users.Where(u => u.UserName == followToUsername).Include(u => u.Followers).FirstOrDefaultAsync();
@@ -125,7 +125,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (follower is null) throw new AppUserNotFoundException($"User with username {_currentUserName} didnt found!");
 
             if (follower.Follows.Any(fi => fi.UserName == user.UserName)) throw new AlreadyFollowedException($"You already followed to {followToUsername}!");
-            follower.Follows.Add(new FollowItem
+            FollowItem followItem = new FollowItem
             {
                 Name = user.Name,
                 Surname = user.Surname,
@@ -133,7 +133,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 UserName = user.UserName,
                 IsConfirmed = user.IsPrivate ? false : true
 
-            });
+            };
+            follower.Follows.Add(followItem);
             user.Followers.Add(new FollowerItem
             {
                 Name = follower.Name,
@@ -149,8 +150,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = user.IsPrivate ? $"{user.UserName} sent to you follow request" : $"{user.UserName} followed to you",
                 SourceUrl = user.ImageUrl
             };
+            
             await _notificationRepository.CreateAsync(newNotification);       
             await _userManager.UpdateAsync(user);
+            return _mapper.Map<FollowGetDto>(followItem);
 
         }
 
@@ -165,8 +168,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUserGetDto dto = _mapper.Map<AppUserGetDto>(user);
             dto.FollowersCount = user.Followers.Where(f => f.IsConfirmed == true).Count();
             dto.FollowsCount = user.Follows.Where(f => f.IsConfirmed == true).Count();
-            dto.FollowerRequestCount = user.Followers.Where(f => f.IsConfirmed == false).Count();
-            dto.FollowsRequestCount = user.Follows.Where(f => f.IsConfirmed == false).Count();
+            dto.FollowerRequestsCount = user.Followers.Where(f => f.IsConfirmed == false).Count();
+            dto.FollowsRequestsCount = user.Follows.Where(f => f.IsConfirmed == false).Count();
             return dto;
         }
 

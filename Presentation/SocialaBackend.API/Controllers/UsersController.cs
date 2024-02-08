@@ -76,8 +76,7 @@ namespace SocialaBackend.API.Controllers
         [HttpPost("users/{username}/follow")]
         public async Task<IActionResult> Follow(string username)
         {
-            await _service.FollowAsync(username);
-            return Ok();
+            return Ok(await _service.FollowAsync(username));
         }
         [Authorize]
         [HttpGet("users/{username}/follows")]

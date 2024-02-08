@@ -23,7 +23,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<CurrentAppUserGetDto> GetCurrentUserAsync();
 
         //follow methods
-        Task FollowAsync(string followToUsername);
+        Task<FollowGetDto> FollowAsync(string followToUsername);
         Task ConfirmFollowerAsync(int id);
         Task CancelFollowerAsync(string username);
         Task CancelFollowAsync(string username);
