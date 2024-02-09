@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using SocialaBackend.Application.Dtos;
+using SocialaBackend.Application.Dtos.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,16 +13,18 @@ namespace SocialaBackend.Application.Abstractions.Services
     {
 
         Task<SettingsDescriptionGetDto> GetDescriptionAsync();
+        Task<SettingsSocialGetDto> GetSocialLinksAsync();
+        Task<SettingsNotifyGetDto> GetNotifySettingsAsync();
         Task<string> ChangeAvatarAsync(IFormFile photo);
         Task<string> ChangeBackgroundAsync(IFormFile photo);
-        Task<SettingsSocialPutDto> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto);
+        Task<string?> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto);
 
-        Task<SettingsNotifyPutDto> ChangeNotifySettingsAsync(SettingsNotifyPutDto dto);
+        Task<string?> ChangeNotifySettingsAsync(SettingsNotifyPutDto dto);
 
         Task<string?> ChangeBioAsync(string? bio);
 
         Task LikeAvatarAsync(string username);
 
-        Task PostDescriptionAsync(SettingsDescriptionPutDto dto);
+        Task<string?> PostDescriptionAsync(SettingsDescriptionPutDto dto);
     }
 }

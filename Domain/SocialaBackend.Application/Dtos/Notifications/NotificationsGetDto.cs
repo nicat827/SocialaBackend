@@ -13,5 +13,6 @@ namespace SocialaBackend.Application.Dtos
         public string Text { get; set; } = null!;
 
         public string? SourceUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

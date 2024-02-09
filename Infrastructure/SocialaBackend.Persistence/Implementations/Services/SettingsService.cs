@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
+using SocialaBackend.Application.Dtos.Settings;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
@@ -47,24 +48,32 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser user = await _getUser();
             return _mapper.Map<SettingsDescriptionGetDto>(user);
         }
+        public async Task<SettingsSocialGetDto> GetSocialLinksAsync()
+        {
+            AppUser user = await _getUser();
 
-        public async Task PostDescriptionAsync(SettingsDescriptionPutDto dto)
+            return new SettingsSocialGetDto { FacebookLink = user.FacebookLink, GithubLink = user.GithubLink, InstagramLink = user.InstagramLink };
+        }
+        public async Task<SettingsNotifyGetDto> GetNotifySettingsAsync()
+        {
+            AppUser user = await _getUser();
+            return new SettingsNotifyGetDto { PhotoLikeNotify = user.PhotoLikeNotify, FollowerNotify = user.FollowerNotify, PostLikeNotify = user.PostLikeNotify };
+        }
+
+        public async Task<string?> PostDescriptionAsync(SettingsDescriptionPutDto dto)
         {
             AppUser currentUser = await _getUser();
-            if (currentUser.UserName != dto.UserName)
-            {
-                if (await _userManager.Users.AnyAsync(u => u.UserName == dto.UserName)) 
-                    throw new UserAlreadyExistException($"User with username: {dto.UserName} already exists!");
-                currentUser.UserName = dto.UserName;
-            }
+         
             currentUser.Bio = dto.Bio;
+            currentUser.Surname = dto.Surname;
+            currentUser.Name = dto.Name;
             currentUser.Gender = dto.Gender;
             currentUser.IsPrivate = dto.IsPrivate;
             if (currentUser.Email != dto.Email)
                 if (await _userManager.Users.AnyAsync(u => u.Email == dto.Email))
                     throw new UserAlreadyExistException($"User with email: {dto.Email} already exists!");
-
-            if (dto.Photo is not null) await _createAvatar(dto.Photo, currentUser);
+            string imgUrl = null;
+            if (dto.Photo is not null) imgUrl  = await _createAvatar(dto.Photo, currentUser);
             if (currentUser.Email != dto.Email)
             {
                 currentUser.Email = dto.Email;
@@ -78,6 +87,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
 
             await _userManager.UpdateAsync(currentUser);
+            return imgUrl;
         }
 
         public async Task<string> ChangeAvatarAsync(IFormFile photo)
@@ -104,24 +114,28 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return cloudinaryUrl;
 
         }
-        public async Task<SettingsSocialPutDto> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto)
+        public async Task<string?> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto)
         {
             AppUser user = await _getUser();
             user.FacebookLink = dto.FacebookLink;
             user.GithubLink = dto.GithubLink;
             user.InstagramLink = dto.InstagramLink;
+            string? img = null;
+            if (dto.Photo is not null) img = await _createAvatar(dto.Photo, user);
             await _userManager.UpdateAsync(user);
-            return dto;
+            return img;
         }
 
-        public async Task<SettingsNotifyPutDto> ChangeNotifySettingsAsync(SettingsNotifyPutDto dto)
+        public async Task<string?> ChangeNotifySettingsAsync(SettingsNotifyPutDto dto)
         {
             AppUser user = await _getUser();
             user.FollowerNotify = dto.FollowerNotify;
             user.PhotoLikeNotify = dto.PhotoLikeNotify;
             user.PostLikeNotify = dto.PostLikeNotify;
+            string? img = null;
+            if (dto.Photo is not null) img = await _createAvatar(dto.Photo, user);
             await _userManager.UpdateAsync(user);
-            return dto;
+            return img;
 
         }
         public async Task LikeAvatarAsync(string username)
@@ -180,7 +194,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return user;
         }
 
-        private async Task _createAvatar(IFormFile avatar, AppUser currentUser)
+        private async Task<string> _createAvatar(IFormFile avatar, AppUser currentUser)
         {
             _fileService.CheckFileType(avatar, FileType.Image);
             _fileService.CheckFileSize(avatar, 2);
@@ -191,6 +205,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             string imageUrl = await _fileService.CreateFileAsync(avatar, "uploads", "users", "avatars");
             string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl, FileType.Image, "uploads", "users", "avatars");
             currentUser.ImageUrl = cloudinaryUrl;
+            return cloudinaryUrl;
             
         }
 

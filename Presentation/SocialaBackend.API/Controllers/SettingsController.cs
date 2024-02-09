@@ -28,8 +28,8 @@ namespace SocialaBackend.API.Controllers
         [Authorize]
         public async Task<IActionResult> PostDescription([FromForm]SettingsDescriptionPutDto dto)
         {
-            await _service.PostDescriptionAsync(dto);
-            return NoContent();
+            
+            return Ok(await _service.PostDescriptionAsync(dto));
         }
         [HttpPut("photo")]
         [Authorize]
@@ -54,21 +54,35 @@ namespace SocialaBackend.API.Controllers
         [HttpPut("social")]
         [Authorize]
 
-        public async Task<IActionResult> ChangeSocialLinks(SettingsSocialPutDto dto)
+        public async Task<IActionResult> ChangeSocialLinks([FromForm]SettingsSocialPutDto dto)
         {
             return Ok(await _service.ChangeSocialMediaLinksAsync(dto));
+        }
+        [HttpGet("social")]
+        [Authorize]
+        public async Task<IActionResult> GetSocial()
+        {
+            return Ok(await _service.GetSocialLinksAsync());
         }
         [HttpPut("notification")]
         [Authorize]
 
-        public async Task<IActionResult> ChangeNotificationSettings(SettingsNotifyPutDto dto)
+        public async Task<IActionResult> ChangeNotificationSettings([FromForm]SettingsNotifyPutDto dto)
         {
             return Ok(await _service.ChangeNotifySettingsAsync(dto));
+        }
+
+     
+        [HttpGet("notification")]
+        [Authorize]
+        public async Task<IActionResult> GetNotifySettings()
+        {
+            return Ok(await _service.GetNotifySettingsAsync());
         }
         [HttpPut("likePhoto")]
         [Authorize]
 
-        public async Task<IActionResult> LikePhoto(string username)
+        public async Task<IActionResult> LikePhoto([FromForm]string username)
         {
             await _service.LikeAvatarAsync(username);
             return NoContent();

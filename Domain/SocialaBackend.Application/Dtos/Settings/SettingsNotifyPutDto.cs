@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,6 @@ namespace SocialaBackend.Application.Dtos
         public bool PhotoLikeNotify { get; set; }
         public bool PostLikeNotify { get; set; } 
         public bool FollowerNotify { get; set; }
+        public IFormFile? Photo { get; set; }
     }
 }

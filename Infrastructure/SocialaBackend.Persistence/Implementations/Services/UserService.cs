@@ -75,8 +75,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 AppUser = follower,
                 Title = "Follow Confirmed!",
                 Text = $"{user.UserName} accepted your follow",
-                SourceUrl = user.ImageUrl
+                SourceUrl = user.ImageUrl,
+                
             };
+            NotificationsGetDto notificationDto = new()
+            {
+                Title = newNotification.Title,
+                Text = newNotification.Text,
+                SourceUrl = newNotification.SourceUrl,
+                CreatedAt = DateTime.Now
+            };
+            await _hubContext.Clients.Group(follower.UserName).SendAsync("NewNotification", notificationDto);
             await _notificationRepository.CreateAsync(newNotification);
             await _userManager.UpdateAsync(user);
             await _userManager.UpdateAsync(follower);
@@ -160,7 +169,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 Title = newNotification.Title,
                 Text = newNotification.Text,
-                SourceUrl = newNotification.SourceUrl
+                SourceUrl = newNotification.SourceUrl,
+                CreatedAt = DateTime.Now
             };
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
             await _notificationRepository.CreateAsync(newNotification);       
@@ -356,6 +366,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = $"Thank you! You succesfully confirmed {dto.Email}",
                 AppUser = user
             };
+            NotificationsGetDto notify  = new() { CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title};
+            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
