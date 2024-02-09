@@ -22,9 +22,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _repository = repository;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<NotificationsGetDto>> GetLastNotifications()
+        public async Task<IEnumerable<NotificationsGetDto>> GetLastNotifications(string userName)
         {
-            IEnumerable<Notification> notificatons = await _repository.OrderAndGet(n => n.Id, true, limit: 10).ToListAsync();
+            IEnumerable<Notification> notificatons = await _repository.OrderAndGet(n => n.Id, true, n => n.AppUser.UserName == userName, limit: 10,includes:"AppUser").ToListAsync();
             return _mapper.Map<IEnumerable<NotificationsGetDto>>(notificatons);
         }
 

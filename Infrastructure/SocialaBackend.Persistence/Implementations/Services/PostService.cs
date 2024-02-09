@@ -308,7 +308,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         Text = $"{user.UserName} liked your post!",
                         SourceUrl = post.Items.FirstOrDefault(i => i.Type == FileType.Image)?.SourceUrl
                     };
-                    await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification",  newNotification.Text);
+                    NotificationsGetDto dto = new() { SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text };
+                    await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification",  dto);
                     await _notificationRepository.CreateAsync(newNotification);
                 }
             }

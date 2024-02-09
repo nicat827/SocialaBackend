@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Razor.Hosting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
@@ -15,6 +16,7 @@ using SocialaBackend.Application.Exceptions.Token;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +27,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class UserService : IUserService
     {
+        private readonly IHubContext<NotificationHub> _hubContext;
         private readonly INotificationRepository _notificationRepository;
         private readonly IEmailService _emailService;
         private readonly IHttpContextAccessor _http;
@@ -37,8 +40,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly SignInManager<AppUser> _signInManager;
         private readonly string _currentUserName;
 
-        public UserService(INotificationRepository notificationRepository, IEmailService emailService, IHttpContextAccessor http, ICloudinaryService cloudinaryService, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
+        public UserService(
+            IHubContext<NotificationHub> hubContext,
+            INotificationRepository notificationRepository, IEmailService emailService, IHttpContextAccessor http, ICloudinaryService cloudinaryService, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
+            _hubContext = hubContext;
             _notificationRepository = notificationRepository;
             _emailService = emailService;
             _http = http;
@@ -147,10 +153,16 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 AppUser = user,
                 Title = "New Follow!",
-                Text = user.IsPrivate ? $"{user.UserName} sent to you follow request" : $"{user.UserName} followed to you",
+                Text = user.IsPrivate ? $"{follower.UserName} sent to you follow request" : $"{follower.UserName} followed to you",
                 SourceUrl = user.ImageUrl
             };
-            
+            NotificationsGetDto notificationDto = new()
+            {
+                Title = newNotification.Title,
+                Text = newNotification.Text,
+                SourceUrl = newNotification.SourceUrl
+            };
+            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
             await _notificationRepository.CreateAsync(newNotification);       
             await _userManager.UpdateAsync(user);
             return _mapper.Map<FollowGetDto>(followItem);
@@ -177,7 +189,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUserName)
                 .Include(u => u.LikedAvatars)
-                .Include(u => u.Notifications.Take(10))
                 .Include(u => u.Follows)
                 .Include(u => u.Followers)
                 .Include(u => u.LikedReplies)

@@ -23,10 +23,16 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         {
             var connectionId = Context.ConnectionId;
             await Groups.AddToGroupAsync(connectionId, userName);
-            IEnumerable<NotificationsGetDto> notifications = await _service.GetLastNotifications();
+            IEnumerable<NotificationsGetDto> notifications = await _service.GetLastNotifications(userName);
             await Clients.Client(connectionId).SendAsync("LatestNotifications", notifications);
         }
-    
+
+
+        public async Task Disconnect(string userName)
+        {
+            var connectionId = Context.ConnectionId;
+            await Groups.RemoveFromGroupAsync(connectionId, userName);
+        }
 
         public async Task SendLikeNotification(string userName)
         {

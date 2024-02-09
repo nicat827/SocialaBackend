@@ -23,6 +23,8 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public Gender Gender { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsPrivate { get; set; }
+
+        public string? BackgroundImage { get; set; }
         public ICollection<NotificationsGetDto> Notifications { get; set; } = new List<NotificationsGetDto>();
         public IEnumerable<string> LikedAvatarsUsernames { get; set; } = new List<string>();
         public ICollection<FollowGetDto> Follows { get; set; } = new List<FollowGetDto>();

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
@@ -10,6 +11,7 @@ using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +23,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class SettingsService : ISettingsService
     {
         private readonly string _currentUsername;
+        private readonly IHubContext<NotificationHub> _hubContext;
         private readonly INotificationRepository _notificationRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly UserManager<AppUser> _userManager;
@@ -28,9 +31,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IEmailService _emailService;
         private readonly IFileService _fileService;
 
-        public SettingsService(INotificationRepository notificationRepository, IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
+        public SettingsService(IHubContext<NotificationHub> hubContext, INotificationRepository notificationRepository, IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
         {
             _currentUsername = http.HttpContext.User.Identity.Name;
+            _hubContext = hubContext;
             _notificationRepository = notificationRepository;
             _cloudinaryService = cloudinaryService;
             _userManager = userManager;
@@ -142,13 +146,16 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     currentUser.LikedAvatars.Add(new AvatarLikeItem { AppUserId = user.Id, UserName = user.UserName });
                     if (user.PhotoLikeNotify && user.UserName != _currentUsername)
                     {
-                        await _notificationRepository.CreateAsync(new Notification
+                        Notification newNotification = new Notification
                         {
                             AppUser = user,
                             Title = "Avatar Liked!",
                             Text = $"User {_currentUsername} liked your avatar",
                             SourceUrl = user.ImageUrl
-                        });
+                        };
+                        NotificationsGetDto dto = new() { Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl };
+                        await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
+                        await _notificationRepository.CreateAsync(newNotification);
                        
                     }
                 }

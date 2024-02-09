@@ -21,6 +21,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
         IQueryable<T> OrderAndGet(
             Expression<Func<T, object>> order,
             bool isDescending,
+            Expression<Func<T, bool>>? expression = null,
             int? skip = null,
             int? limit = null,
             bool isTracking = false,

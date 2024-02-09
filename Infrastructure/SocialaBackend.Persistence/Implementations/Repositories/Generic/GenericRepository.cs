@@ -66,6 +66,7 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
         public IQueryable<T> OrderAndGet(
             Expression<Func<T, object>> order,
             bool isDescending,
+            Expression<Func<T, bool>>? expression = null,
             int? skip = null,
             int? limit = null,
             bool isTracking = false,
@@ -74,14 +75,14 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
-
+            if (includes != null) query = _takeIncludes(query, includes);
+            if (expression is not null) query = query.Where(expression);
             if (!isDescending) query = query.OrderBy(order);
             else query = query.OrderByDescending(order);
 
             if (skip != null) query = query.Skip((int)skip);
             if (limit != null) query = query.Take((int)limit);
 
-            if (includes != null) query = _takeIncludes(query, includes);
 
             return isTracking ? query : query.AsNoTracking();
         }

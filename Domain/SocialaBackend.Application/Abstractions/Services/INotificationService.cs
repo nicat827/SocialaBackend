@@ -9,6 +9,6 @@ namespace SocialaBackend.Application.Abstractions.Services
 {
     public interface INotificationService
     {
-        public Task<IEnumerable<NotificationsGetDto>> GetLastNotifications();
+        public Task<IEnumerable<NotificationsGetDto>> GetLastNotifications(string userName);
     }
 }

@@ -39,7 +39,7 @@ namespace SocialaBackend.API.Controllers
         }
         [HttpPut("bio")]
         [Authorize]
-        public async Task<IActionResult> ChangeBio(string? bio)
+        public async Task<IActionResult> ChangeBio([FromForm]string? bio)
         {
             return Ok(await _service.ChangeBioAsync(bio));
         }
