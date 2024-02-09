@@ -53,7 +53,7 @@ namespace SocialaBackend.API.Controllers
 
         [HttpPost("comment")]
         [Authorize]
-        public async Task<IActionResult> Post([FromForm]CommentPostDto dto)
+        public async Task<IActionResult> Post(CommentPostDto dto)
         {
             if (dto.Id <= 0) throw new InvalidIdException("Id cant be a negative num!");
             return StatusCode(StatusCodes.Status201Created, await _service.CommentAsync(dto));
@@ -72,7 +72,7 @@ namespace SocialaBackend.API.Controllers
 
         [HttpPost("comment/reply")]
         [Authorize]
-        public async Task<IActionResult> Reply([FromForm]ReplyPostDto dto)
+        public async Task<IActionResult> Reply(ReplyPostDto dto)
         {
             if (dto.Id <= 0) throw new InvalidIdException("Id cant be a negative num!");
             

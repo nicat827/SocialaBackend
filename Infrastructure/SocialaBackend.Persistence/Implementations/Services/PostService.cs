@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using SocialaBackend.Application.Abstractions.Repositories;
@@ -11,6 +12,7 @@ using SocialaBackend.Application.Exceptions.Forbidden;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +29,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IMapper _mapper;
         private readonly ICommentRepository _commentRepository;
         private readonly IReplyRepository _replyRepository;
+        private readonly IHubContext<NotificationHub> _notificationHubContext;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly INotificationRepository _notificationRepository;
         private readonly IPostRepository _postRepository;
@@ -40,6 +43,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             ICommentRepository commentRepository,
             IReplyRepository replyRepository,
             IHttpContextAccessor http,
+            IHubContext<NotificationHub> notificationHubContext,
             ICloudinaryService cloudinaryService,
             INotificationRepository notificationRepository,
             IPostRepository postRepository)
@@ -51,6 +55,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             _currentUserName = http.HttpContext.User.Identity.Name;
             _commentRepository = commentRepository;
             _replyRepository = replyRepository;
+            _notificationHubContext = notificationHubContext;
             _cloudinaryService = cloudinaryService;
             _notificationRepository = notificationRepository;
             _postRepository = postRepository;
@@ -279,7 +284,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task LikePostAsync(int id)
         {
-            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "Likes.AppUser", "AppUser", "AppUser.Followers" });
+            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "Likes.LikedUser", "AppUser", "AppUser.Followers" });
            
             if (post is null) throw new NotFoundException("Post didnt found!");
             if (post.AppUser.IsPrivate)
@@ -303,6 +308,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         Text = $"{user.UserName} liked your post!",
                         SourceUrl = post.Items.FirstOrDefault(i => i.Type == FileType.Image)?.SourceUrl
                     };
+                    await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification",  newNotification.Text);
                     await _notificationRepository.CreateAsync(newNotification);
                 }
             }

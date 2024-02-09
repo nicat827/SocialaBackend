@@ -19,12 +19,10 @@ namespace SocialaBackend.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _service;
-        private readonly INotificationService _notificationService;
 
-        public UsersController(IUserService service, INotificationService notificationService)
+        public UsersController(IUserService service)
         {
             _service = service;
-            _notificationService = notificationService;
         }
         [HttpPost("auth/register")]
         public async Task<IActionResult> Post([FromForm]AppUserRegisterDto dto)
@@ -72,12 +70,6 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> Get(string username)
         {
             return Ok(await _service.GetAsync(username));
-        }
-        [HttpPost("send")]
-        public async Task<IActionResult> Send(string message)
-        {
-            await _notificationService.SendNotification(message);
-            return Ok();
         }
 
         [Authorize]

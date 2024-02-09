@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
-using SocialaBackend.Persistence.Implementations.Hubs;
+using SocialaBackend.Application.Dtos;
+using SocialaBackend.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,17 +12,21 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Persistence.Implementations.Services
 {
-    public class NotificationService : INotificationService
+    internal class NotificationService : INotificationService
     {
-        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly INotificationRepository _repository;
+        private readonly IMapper _mapper;
 
-        public NotificationService(IHubContext<NotificationHub> hubContext)
+        public NotificationService(INotificationRepository repository, IMapper mapper)
         {
-            _hubContext = hubContext;
+            _repository = repository;
+            _mapper = mapper;
         }
-        public async Task SendNotification(string message)
+        public async Task<IEnumerable<NotificationsGetDto>> GetLastNotifications()
         {
-            await _hubContext.Clients.All.SendAsync("message", message);
+            IEnumerable<Notification> notificatons = await _repository.OrderAndGet(n => n.Id, true, limit: 10).ToListAsync();
+            return _mapper.Map<IEnumerable<NotificationsGetDto>>(notificatons);
         }
+
     }
 }

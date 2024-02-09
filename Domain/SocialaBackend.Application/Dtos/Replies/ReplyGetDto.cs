@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record ReplyGetDto(int Id, string Author, string? AuthorImageUrl, string Text, int LikesCount);
+    public record ReplyGetDto(int Id, string Author, string? AuthorImageUrl, string Text, int LikesCount, DateTime CreatedAt);
 }
