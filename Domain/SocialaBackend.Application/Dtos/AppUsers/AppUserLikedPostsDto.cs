@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record AppUserLikesGetDto(PostGetDto Post);
+    public record AppUserLikedPostsDto(int Id);
     
     
 }

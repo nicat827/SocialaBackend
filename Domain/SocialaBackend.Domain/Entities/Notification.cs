@@ -11,9 +11,9 @@ namespace SocialaBackend.Domain.Entities
     public class Notification:BaseEntity
     {
         public string Text { get; set; } = null!;
-        public string AppUserId { get; set; } = null!;
         public string? Title { get; set; }
         public string? SourceUrl { get; set; }
+        public string AppUserId { get; set; } = null!;
         public AppUser AppUser { get; set; } = null!;
     }
 }

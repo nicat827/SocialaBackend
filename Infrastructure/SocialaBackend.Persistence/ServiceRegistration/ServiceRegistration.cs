@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebSockets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +9,7 @@ using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Persistence.DAL;
+using SocialaBackend.Persistence.Implementations.Hubs;
 using SocialaBackend.Persistence.Implementations.Repositories;
 using SocialaBackend.Persistence.Implementations.Services;
 using System;
@@ -45,9 +48,15 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<INotificationRepository, NotificationRepository>();
             //services
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<AppDbContextInitializer>();
+        }
+
+        public static void AddPersistenceConfigure(this IApplicationBuilder app)
+        {
+            
         }
     }
 }

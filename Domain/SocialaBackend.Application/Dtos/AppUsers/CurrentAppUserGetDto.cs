@@ -27,7 +27,7 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public IEnumerable<string> LikedAvatarsUsernames { get; set; } = new List<string>();
         public ICollection<FollowGetDto> Follows { get; set; } = new List<FollowGetDto>();
         public ICollection<FollowGetDto> Followers { get; set; } = new List<FollowGetDto>();
-        public ICollection<AppUserLikesGetDto> LikedPosts { get; set; } = new List<AppUserLikesGetDto>();
+        public ICollection<int> LikedPostsIds { get; set; } = new List<int>();
         public IEnumerable<int> LikedCommentsIds { get; set; } = new List<int>();
         public IEnumerable<int> LikedRepliesIds { get; set; } = new List<int>();
     }

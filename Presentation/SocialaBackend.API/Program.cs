@@ -1,4 +1,4 @@
-using SocialaBackend.API.Middlewares;
+﻿using SocialaBackend.API.Middlewares;
 using SocialaBackend.Persistence.ServiceRegistration;
 using SocialaBackend.Infrastructure.ServiceRegistration;
 using SocialaBackend.Application.ServiceRegistration;
@@ -6,6 +6,7 @@ using ProniaOnion.Persistence.DAL;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
+using SocialaBackend.Persistence.Implementations.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
 {
     
-    build.WithOrigins("http://localhost:5173").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    build.WithOrigins("http://localhost:7023").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 }));
 
 
@@ -56,6 +57,7 @@ builder.Services.AddSwaggerGen(opt =>
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -66,6 +68,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.UseRouting();
 
 app.UseCors("corspolicy");
 
@@ -82,6 +86,9 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.AddPersistenceConfigure();
+
 app.MapControllers();
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

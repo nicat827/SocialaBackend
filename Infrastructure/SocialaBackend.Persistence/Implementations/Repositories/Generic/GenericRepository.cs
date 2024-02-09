@@ -85,7 +85,11 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
 
             return isTracking ? query : query.AsNoTracking();
         }
-        public async Task<T> GetByIdAsync(int id, bool isTracking = false, bool iqnoreQuery = false, Expression<Func<T, object>>? expression = null, params string[] includes)
+        public async Task<T> GetByIdAsync(int id,
+            bool isTracking = false,
+            bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expression = null,
+            params string[] includes)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
@@ -93,6 +97,8 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             if (expression is not null)
             {
                 query = query.Include(expression);
+               
+
             }
             if (includes != null)
             {
@@ -105,6 +111,7 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
             query = query.Where(expression);
+
             if (includes != null) query = _takeIncludes(query, includes);
 
             return isTracking ? await query.FirstOrDefaultAsync() : await query.AsNoTracking().FirstOrDefaultAsync();

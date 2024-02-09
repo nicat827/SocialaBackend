@@ -72,8 +72,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Comment newComment = new Comment
             {
                 Text = dto.Text,
-                AuthorImageUrl = user.ImageUrl,
-                Author = user.UserName
+                AuthorId = user.Id,
             };
 
             post.Comments.Add(newComment);
@@ -152,8 +151,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Reply newReply = new Reply
             {
                 Text = dto.Text,
-                AuthorImageUrl = user.ImageUrl,
-                Author = user.UserName
+                AuthorId = user.Id
             };
             comment.Replies.Add(newReply);
             comment.RepliesCount++;
@@ -164,7 +162,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<IEnumerable<ReplyGetDto>> GetRepliesAsync(int id, int? skip)
         {
             if (skip is null) skip = 0;
-            Comment? comment = await _commentRepository.GetByIdAsync(id,expression:c => c.Replies.Skip((int)skip).Take(10), includes: new[] { "Post", "Post.AppUser", "Post.AppUser.Followers" });
+            Comment? comment = await _commentRepository.GetByIdAsync(id, includes: new[] { "Post", "Post.AppUser", "Post.AppUser.Followers" });
             if (comment is null) throw new NotFoundException($"Comment with id {id} wasnt defined!");
             AppUser owner = comment.Post.AppUser;
             if (owner.IsPrivate)
@@ -172,7 +170,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (owner.UserName != _currentUserName && !owner.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                     throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            return _mapper.Map<IEnumerable<ReplyGetDto>>(comment.Replies);
+            IEnumerable<Reply> replies = await _replyRepository.GetCollection(r => r.CommentId == comment.Id, (int)skip, 10, includes: "Author");
+            return _mapper.Map<IEnumerable<ReplyGetDto>>(replies);
 
         }
 
@@ -208,7 +207,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<IEnumerable<CommentGetDto>> GetCommentsAsync(int id, int? skip)
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetByIdAsync(id, expression:p => p.Comments.Skip((int)skip).Take(10), includes: new[] { "AppUser", "AppUser.Followers" });
+            Post? post = await _postRepository.GetByIdAsync(id, includes: new[] { "AppUser", "AppUser.Followers" });
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
             if (post.AppUser.IsPrivate)
             {
@@ -216,15 +215,22 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     if (!post.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                         throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            return _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments);
+            IEnumerable<Comment> comments = await _commentRepository.GetCollection(c => c.PostId == post.Id, (int)skip, 10, includes:"Author");
+            ICollection<CommentGetDto> dto = new List<CommentGetDto>();
+            foreach (Comment comment in comments)
+            {
+                dto.Add(new CommentGetDto(comment.Id, comment.Author.UserName, comment.Author.ImageUrl,comment.Text, comment.RepliesCount, comment.LikesCount, comment.CreatedAt));
+            }
+            return dto;
 
         }
 
-        public async Task<IEnumerable<PostLikeGetDto>> GetLikesAsync(int id, int? skip)
+        public async Task<ICollection<PostLikeGetDto>> GetLikesAsync(int id, int? skip)
         
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetByIdAsync(id, expression: p => p.Likes.Skip((int)skip),includes: new[] { "AppUser", "AppUser.Followers" });
+            Post? post = await _postRepository.GetByIdAsync(id, expression: p => p.Likes.Skip((int)skip), includes: new[] { "AppUser", "AppUser.Followers", "Likes","Likes.LikedUser" });
+          
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
             if (post.AppUser.IsPrivate)
             {
@@ -232,7 +238,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     if (!post.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                         throw new ForbiddenException("This account is private, follow for seeing post likes!");
             }
-            return _mapper.Map<IEnumerable<PostLikeGetDto>>(post.Likes);
+            ICollection<PostLikeGetDto> dto = new List<PostLikeGetDto>();
+            foreach (PostLikeItem likeItem in post.Likes)
+            {
+                dto.Add(new PostLikeGetDto(
+                    likeItem.Id,
+                    likeItem.LikedUser.UserName,
+                    likeItem.LikedUser.Name,
+                    likeItem.LikedUser.Surname,
+                    likeItem.LikedUser.ImageUrl
+                ));
+            }
+            return dto;
 
         }
 
@@ -242,6 +259,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Where(u => u.UserName == username)
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Comments.Take(5))
+                        .ThenInclude(c => c.Author)
                 .Include(u => u.Posts)
                     .ThenInclude(p => p.Items)
                 .Include(u => u.Followers)
@@ -254,14 +272,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
             ICollection<PostGetDto> dto = _mapper.Map<ICollection<PostGetDto>>(user.Posts);
-            
+          
             return dto;
 
         }
 
         public async Task LikePostAsync(int id)
         {
-            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "AppUser", "AppUser.Followers" });
+            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "Likes.AppUser", "AppUser", "AppUser.Followers" });
            
             if (post is null) throw new NotFoundException("Post didnt found!");
             if (post.AppUser.IsPrivate)
@@ -270,11 +288,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     if (!post.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                         throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            PostLikeItem? likedItem = post.Likes.FirstOrDefault(li => li.Username == _currentUserName);
+            PostLikeItem? likedItem = post.Likes.FirstOrDefault(li => li.LikedUser.UserName == _currentUserName);
             if (likedItem is null)
             {
                 AppUser user = await _getUser(_currentUserName);
-                post.Likes.Add(new PostLikeItem {AppUserId=user.Id, Username = user.UserName, ImageUrl = user.ImageUrl, Name = user.Name, Surname = user.Surname });
+                post.Likes.Add(new PostLikeItem { LikedUserId = user.Id});
                 post.LikesCount++;
                 if (user.PostLikeNotify && user.UserName != post.AppUser.UserName)
                 {
@@ -288,7 +306,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     await _notificationRepository.CreateAsync(newNotification);
                 }
             }
-            else 
+            else
             {
                 post.Likes.Remove(likedItem);
                 post.LikesCount--;

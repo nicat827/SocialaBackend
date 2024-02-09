@@ -168,25 +168,27 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUserGetDto dto = _mapper.Map<AppUserGetDto>(user);
             dto.FollowersCount = user.Followers.Where(f => f.IsConfirmed == true).Count();
             dto.FollowsCount = user.Follows.Where(f => f.IsConfirmed == true).Count();
-            dto.FollowerRequestsCount = user.Followers.Where(f => f.IsConfirmed == false).Count();
-            dto.FollowsRequestsCount = user.Follows.Where(f => f.IsConfirmed == false).Count();
+          
             return dto;
         }
 
         public async Task<CurrentAppUserGetDto> GetCurrentUserAsync()
         {
             AppUser? user = await _userManager.Users
+                .Where(u => u.UserName == _currentUserName)
                 .Include(u => u.LikedAvatars)
-                .Include(u => u.Notifications)
+                .Include(u => u.Notifications.Take(10))
                 .Include(u => u.Follows)
                 .Include(u => u.Followers)
                 .Include(u => u.LikedReplies)
                 .Include(u => u.LikedPosts)
                     .ThenInclude(lp => lp.Post)
                 .Include(u => u.LikedComments)
-                .FirstOrDefaultAsync(u => u.UserName == _currentUserName);
-            if (user is null) throw new AppUserNotFoundException($"User with _currentUserName {_currentUserName} wasnt defined!");
+                .FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} wasnt defined!");
             CurrentAppUserGetDto dto = _mapper.Map<CurrentAppUserGetDto>(user);
+            dto.LikedPostsIds= new List<int>();
+            foreach (Post post in user.LikedPosts.Select(l => l.Post)) dto.LikedPostsIds.Add(post.Id);
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
             dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
