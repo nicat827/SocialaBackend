@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +13,8 @@ namespace SocialaBackend.Domain.Entities.User
 {
     public class AppUser:IdentityUser
     {
-        
+        [Key]
+        public override string Id { get => base.Id; set => base.Id = value; }
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
         public string? ImageUrl { get; set; }
@@ -35,6 +38,8 @@ namespace SocialaBackend.Domain.Entities.User
         public DateTime? RefreshTokenExpiresAt { get; set; }
 
         //relational
+
+        public Story Story { get; set; } = null!;
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public ICollection<AvatarLikeItem> LikedAvatars { get; set; } = new List<AvatarLikeItem>();
         public ICollection<FollowItem> Follows { get; set; } = new List<FollowItem>();

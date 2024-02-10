@@ -29,11 +29,16 @@ namespace SocialaBackend.Persistence.DAL
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyQueryFilters();
+            builder.Entity<AppUser>()
+               .HasOne(p => p.Story)  // HasOne() specifies the navigation property on the principal side (Person).
+               .WithOne(s => s.AppUser)    // WithOne() specifies the navigation property on the dependent side (Passport).
+               .HasForeignKey<Story>(p => p.AppUserId)  // HasForeignKey<TDependent>() specifies the foreign key property in the dependent entity (Passport).
+               .IsRequired();
             builder.Entity<PostLikeItem>()
-            .HasOne(c => c.Post)
-            .WithMany(p => p.Likes)
-            .HasForeignKey(p => p.PostId)
-            .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(c => c.Post)
+                .WithMany(p => p.Likes)
+                .HasForeignKey(p => p.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             base.OnModelCreating(builder);
         }
