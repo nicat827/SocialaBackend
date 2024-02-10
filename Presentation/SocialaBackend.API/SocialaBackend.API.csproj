@@ -25,6 +25,7 @@
     <Folder Include="wwwroot\uploads\posts\videos\" />
     <Folder Include="wwwroot\uploads\users\avatars\" />
     <Folder Include="wwwroot\uploads\users\backgrounds\" />
+    <Folder Include="wwwroot\uploads\stories\" />
   </ItemGroup>
 
 </Project>

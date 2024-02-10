@@ -49,6 +49,7 @@ namespace SocialaBackend.Infrastructure.Implementations
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
             if (uploadResult.Error != null) throw new CloudinaryFileUploadException(uploadResult.Error.Message);
+            _fileService.DeleteFile(srcUrl, folders);
             return uploadResult.SecureUrl.ToString();
             
             
