@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
+using SocialaBackend.Application.Exceptions;
 
 namespace SocialaBackend.API.Controllers
 {
@@ -38,6 +39,14 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> GetStorieItems(int storyId)
         {
             return Ok(await _service.GetStoryItemsAsync(storyId));
+        }
+        [HttpDelete("item/{id}")]
+
+        public async Task<IActionResult> SoftRemoveStoryItem(int id)
+        {
+            if (id <= 0) throw new InvalidIdException("Invalid id!");
+            await _service.SoftRemoveStoryItemAsync(id);
+            return NoContent();
         }
 
         [HttpGet("currentUserItems")]

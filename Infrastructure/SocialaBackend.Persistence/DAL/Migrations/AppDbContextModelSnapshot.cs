@@ -546,6 +546,9 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastItemAddedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("OwnerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");

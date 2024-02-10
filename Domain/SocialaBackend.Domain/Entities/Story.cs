@@ -15,7 +15,7 @@ namespace SocialaBackend.Domain.Entities
         public string OwnerId = null!;
         public AppUser Owner { get; set; } = null!;
 
-
+        public DateTime? LastItemAddedAt { get; set; }
         public ICollection<StoryItem> StoryItems { get; set; } = new List<StoryItem>();
     }
 }

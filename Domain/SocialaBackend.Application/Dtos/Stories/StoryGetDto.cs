@@ -14,6 +14,8 @@ namespace SocialaBackend.Application.Dtos
 
         public string OwnerUserName { get; set; } = null!;
 
+        public DateTime? LastStoryPostedAt { get; set; }
+
         
     }
 }

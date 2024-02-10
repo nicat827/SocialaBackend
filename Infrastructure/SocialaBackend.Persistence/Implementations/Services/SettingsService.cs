@@ -173,7 +173,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                             Text = $"User {_currentUsername} liked your avatar",
                             SourceUrl = user.ImageUrl
                         };
-                        NotificationsGetDto dto = new() { Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl };
+                        NotificationsGetDto dto = new() { Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now };
                         await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
                         await _notificationRepository.CreateAsync(newNotification);
                        

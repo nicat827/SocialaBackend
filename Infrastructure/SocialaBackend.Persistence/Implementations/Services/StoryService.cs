@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
@@ -10,6 +11,8 @@ using SocialaBackend.Application.Exceptions.Forbidden;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Implementations.Hubs;
+using SocialaBackend.Persistence.Implementations.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +24,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class StoryService : IStoryService
     {
         private readonly string _currentUsername;
+        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly INotificationRepository _notificationRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IFileService _fileService;
         private readonly IMapper _mapper;
@@ -28,9 +33,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IStoryRepository _storyRepository;
         private readonly IStoryItemsRepository _storyItemsRepository;
 
-        public StoryService(ICloudinaryService cloudinaryService, IFileService fileService, IHttpContextAccessor http, IMapper mapper, UserManager<AppUser> userManager, IStoryItemsRepository storyItemsRepository, IStoryRepository storyRepository)
+        public StoryService(IHubContext<NotificationHub> hubContext, INotificationRepository notificationRepository, ICloudinaryService cloudinaryService, IFileService fileService, IHttpContextAccessor http, IMapper mapper, UserManager<AppUser> userManager, IStoryItemsRepository storyItemsRepository, IStoryRepository storyRepository)
         {
             _currentUsername = http.HttpContext.User.Identity.Name;
+            _hubContext = hubContext;
+            _notificationRepository = notificationRepository;
             _cloudinaryService = cloudinaryService;
             _fileService = fileService;
             _mapper = mapper;
@@ -46,11 +53,13 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = dto.Text,
                 Story = user.Story
             };
+
             FileType type = _fileService.ValidateFilesForPost(dto.File);
             string url = await _fileService.CreateFileAsync(dto.File, "uploads", "stories");
             string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(url, type, "uploads", "stories");
             newStoryItem.SourceUrl = cloudinaryUrl;
             await _storyItemsRepository.CreateAsync(newStoryItem);
+            user.Story.LastItemAddedAt = DateTime.Now;
             await _storyItemsRepository.SaveChangesAsync();
         }
 
@@ -59,7 +68,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user =  await _userManager.Users
                 .Where(u => u.UserName == _currentUsername)
                 .Include(u => u.Story)
-                    .ThenInclude(s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
+                    .ThenInclude(s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now && si.IsDeleted == false))
                 .FirstOrDefaultAsync();
             var orderedItems = user.Story.StoryItems.OrderByDescending(s => s.CreatedAt);
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
@@ -75,15 +84,48 @@ namespace SocialaBackend.Persistence.Implementations.Services
             ICollection<StoryGetDto> dto = new List<StoryGetDto>();
             foreach (FollowItem userFollow in user.Follows)
             {
-                Story story = await _storyRepository.Get(s => s.Owner.UserName == userFollow.UserName, includes: new[] { "Owner", "StoryItems" });
+                Story story = await _storyRepository.Get(s => s.Owner.UserName == userFollow.UserName, includes: new[] { "Owner"});
                 if (story == null) throw new NotFoundException("User story is not defined!");
-                if (story.StoryItems.Any(si => si.CreatedAt.AddDays(1) > DateTime.Now)) dto.Add(new StoryGetDto {
-                    Id = story.Id,
-                    OwnerImageUrl=userFollow.ImageUrl,
-                    OwnerUserName = userFollow.UserName 
-                });
+                if (story.LastItemAddedAt?.AddDays(1) > DateTime.Now)
+                {
+                     dto.Add(new StoryGetDto {
+                        Id = story.Id,
+                        OwnerImageUrl=userFollow.ImageUrl,
+                        OwnerUserName = userFollow.UserName,
+                    });
+                }
             }
+            var sortedDto = dto.OrderByDescending(s => s.LastStoryPostedAt);
             return dto;
+
+        }
+        
+        public async Task SoftRemoveStoryItemAsync(int id)
+        {
+            StoryItem item = await _storyItemsRepository.GetByIdAsync(id, true, iqnoreQuery: true, includes:new[] { "Watchers", "Story", "Story.Owner" });
+            if (item is null) throw new NotFoundException($"Story item with id {id} wasnt found!");
+            if (item.Story.Owner.UserName != _currentUsername) throw new DontHavePermissionException("You cant delete story item another user!");
+            if (item.IsDeleted)
+            {
+                _storyItemsRepository.Delete(item);
+                item.Watchers.Clear();
+            }
+            else
+            {
+                _storyItemsRepository.SoftDelete(item);
+                Notification newNotification = new Notification
+                {
+                    AppUser = await _getUser(),
+                    Title = "Story added to archive!",
+                    Text = $"Your story has been succesufully added to archive!",
+                    SourceUrl = item.SourceUrl
+                };
+                NotificationsGetDto dto = new() { Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now };
+                await _hubContext.Clients.Group(_currentUsername).SendAsync("NewNotification", dto);
+                await _notificationRepository.CreateAsync(newNotification);
+                foreach (StoryItemWatcher watcher in item.Watchers) watcher.IsDeleted = true;
+            }
+            await _storyItemsRepository.SaveChangesAsync();
 
         }
         public async Task<ICollection<StoryItemGetDto>> GetStoryItemsAsync(int storyId)
