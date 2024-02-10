@@ -13,9 +13,12 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task RegisterAsync(AppUserRegisterDto dto);
         Task<AppUserRegisterResponseDto> ConfirmEmailAsync(AppUserConfirmEmailDto dto);
 
+        Task ResetPasswordAsync(string email);
+        Task<AppUserRegisterResponseDto> SetNewPasswordAsync(AppUserResetPasswordDto dto);
         Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto);
 
         Task<TokenResponseDto> RefreshAsync(string refreshToken);
+
 
         Task LogoutAsync(string refreshToken);
 

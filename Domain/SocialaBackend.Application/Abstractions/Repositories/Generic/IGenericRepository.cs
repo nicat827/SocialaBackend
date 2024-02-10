@@ -35,7 +35,10 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             bool isTracking = false,
             bool iqnoreQuery = false,
             params string[] includes);
-
+        Task<int> GetCountAsync(
+            Expression<Func<T, bool>>? expression = null,
+            params string[] includes
+            );
         Task<T> GetByIdAsync(
             int id,
             bool isTracking = false,

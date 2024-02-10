@@ -285,7 +285,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
                                                                         && u.RefreshTokenExpiresAt > DateTime.UtcNow);
-            Console.WriteLine(refreshToken + " VALIDDDDDDDDDDD");
             if (user is not null)
             {
                 user.RefreshToken = null;
@@ -297,7 +296,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<TokenResponseDto> RefreshAsync(string refreshToken)
         {
-            Console.WriteLine(refreshToken + " TOKENNNNNNNNNNNNNNNNNNNNNNNNN");
             AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
                                                                         && u.RefreshTokenExpiresAt > DateTime.UtcNow);
             if (user is null) throw new InvalidTokenException("Token is not valid!");
@@ -376,6 +374,53 @@ namespace SocialaBackend.Persistence.Implementations.Services
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(user);
             return new AppUserRegisterResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
+        }
+        
+
+        public async Task ResetPasswordAsync(string email)
+        {
+            AppUser? user  = await _userManager.FindByEmailAsync(email);
+            if (user is null) throw new AppUserNotFoundException($"User with email {email} doesnt exists!");
+            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var validResetToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(resetToken));
+            string url = $"http://localhost:5173/reset?token={validResetToken}&email={user.Email}";
+            string body = $"<body>\r\n    <div style=\"margin: 0; padding: 0; font-family: Arial, sans-serif; background-image: url('https://marketplace.canva.com/EAFcuA4ZUpk/1/0/1600w/canva-beige-pastel-terrazzo-abstract-desktop-wallpaper-rtHx0Wpl5Oc.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; justify-content: center; align-items: center; flex-direction: column; height: 100vh; width: 100vw;\">\r\n      <div class=\"container\" style=\"text-align: center; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);\">\r\n        <img src=\"https://demo.foxthemes.net/socialite-v3.0/assets/images/logo.png\" alt=\"Logo\" class=\"logo\" style=\"width: 100px; height: auto; margin-bottom: 20px;\">\r\n        <h2 style=\"color: rgb(88,80,236)\">Welcome To Socialite!</h2>\r\n        <div class=\"confirmation-message\" style=\"font-size: 24px; margin-bottom: 20px;\">\r\n          Forgot password? No problem! Click the button and set a new one :)\r\n        </div>\r\n        <img style=\"width: 350px; height:150px\" src=\"https://sendgrid.com/content/dam/sendgrid/legacy/2019/12/confirmation-email-examples.png\" alt=\"\">\r\n        <div style=\"display: flex; justify-content: center; align-items: center; \">\r\n            <div class=\"social-media-icons\" style=\"margin-left:255px;margin-top: 20px; padding: 5px 10px; border-radius:8px; background-color: rgb(88,80,236); width: 150px; cursor:'pointer' \">\r\n              <a href='{url}' style=\" display: inline-block; margin: 0 10px;text-decoration: none;color: rgba(255, 255, 255, 0.8); transition: transform 0.3s ease;\">click to reset password!</a>\r\n            </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n</body>";
+            await _emailService.SendEmailAsync(user.Email, body, "Change Password", true);
+
+        }
+
+        public async Task<AppUserRegisterResponseDto> SetNewPasswordAsync(AppUserResetPasswordDto dto)
+        {
+            AppUser? user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user is null) throw new AppUserNotFoundException($"User with email {dto.Email} doesnt exists!");
+
+            var res = await _userManager.ResetPasswordAsync(user, dto.Token, dto.Password);
+            if (!res.Succeeded)
+            {
+                StringBuilder sb = new();
+                foreach (var err in res.Errors)
+                {
+                    sb.AppendLine(err.Description);
+                }
+                throw new ResetPasswordTokenException(sb.ToString());
+            }
+            Notification newNotification = new Notification
+            {
+                Title = "Password Changed!",
+                Text = $"You succesfully changed your password!",
+                AppUser = user
+            };
+            NotificationsGetDto notify = new() { CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title };
+            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
+            await _notificationRepository.CreateAsync(newNotification);
+            await _notificationRepository.SaveChangesAsync();
+            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
+            user.RefreshToken = tokens.RefreshToken;
+            user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
+            await _userManager.UpdateAsync(user);
+            return new AppUserRegisterResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
+
         }
 
     }

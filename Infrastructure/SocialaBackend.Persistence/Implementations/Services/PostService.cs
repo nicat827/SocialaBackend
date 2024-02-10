@@ -269,6 +269,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     .ThenInclude(p => p.Items)
                 .Include(u => u.Followers)
                 .FirstOrDefaultAsync();
+            foreach (Post post in user.Posts)
+            {
+                int count = await _replyRepository.GetCountAsync(r => r.Comment.PostId == post.Id, "Comment", "Comment.Post");
+                post.CommentsCount += count;
+            }
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
             if (user.IsPrivate)
             {

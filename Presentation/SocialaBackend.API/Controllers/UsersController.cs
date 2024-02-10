@@ -98,6 +98,17 @@ namespace SocialaBackend.API.Controllers
             await _service.ConfirmFollowerAsync(id);
             return Ok();
         }
+        [HttpPost("users/reset")]
+        public async Task<IActionResult> ResetPassword([FromForm] string email)
+        {
+            await _service.ResetPasswordAsync(email);
+            return Ok();
+        }
+        [HttpPut("users/newPassword")]
+        public async Task<IActionResult> NewPassword([FromForm] AppUserResetPasswordDto dto)
+        {
+            return Ok(await _service.SetNewPasswordAsync(dto));
+        }
         [HttpGet("users/checkPrivate/{username}")]
         [Authorize]
         public async Task<IActionResult> GetType(string username)
