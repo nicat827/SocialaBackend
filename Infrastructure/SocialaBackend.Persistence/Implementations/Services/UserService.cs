@@ -318,6 +318,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             if (await _userManager.Users.AnyAsync(u => u.UserName == dto.Username)) throw new UserAlreadyExistException($"User with username {dto.Username} already exists!");
             AppUser newUser = _mapper.Map<AppUser>(dto);
+            newUser.Story = new Story();
             var res = await _userManager.CreateAsync(newUser, dto.Password);
             if (!res.Succeeded)
             {

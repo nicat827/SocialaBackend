@@ -39,6 +39,11 @@ namespace SocialaBackend.Persistence.DAL
                 .WithMany(p => p.Likes)
                 .HasForeignKey(p => p.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<PostLikeItem>()
+               .HasOne(p => p.LikedUser)
+               .WithMany(u => u.LikedPosts)
+               .HasForeignKey(p => p.LikedUserId)
+               .OnDelete(DeleteBehavior.NoAction); // Каскадное удаление
 
             base.OnModelCreating(builder);
         }

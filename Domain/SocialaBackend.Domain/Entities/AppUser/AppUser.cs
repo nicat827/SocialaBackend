@@ -13,8 +13,6 @@ namespace SocialaBackend.Domain.Entities.User
 {
     public class AppUser:IdentityUser
     {
-        [Key]
-        public override string Id { get => base.Id; set => base.Id = value; }
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
         public string? ImageUrl { get; set; }
