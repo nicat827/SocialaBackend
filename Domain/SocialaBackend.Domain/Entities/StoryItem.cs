@@ -11,6 +11,7 @@ namespace SocialaBackend.Domain.Entities
     {
         public string? SourceUrl { get; set; }
         public int WatchCount { get; set; }
+        public string? Text { get; set; }
 
         //relational
         public int StoryId { get; set; }
