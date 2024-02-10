@@ -14,9 +14,7 @@ namespace SocialaBackend.Application.Dtos
         public string? Text { get; set; }
         public DateTime CreatedAt { get; set; }
         public int WatchCount { get; set; }
-        public IEnumerable<StoryItemWatcher> Watchers { get; set; } = new List<StoryItemWatcher>();
-        public string UserName { get; set; } = null!;
-        public string? ImageUrl { get; set; }
+        public IEnumerable<StoryItemWatcherDto> Watchers { get; set; } = new List<StoryItemWatcherDto>();
 
     }
 }

@@ -31,8 +31,8 @@ namespace SocialaBackend.Persistence.DAL
             builder.ApplyQueryFilters();
             builder.Entity<AppUser>()
                .HasOne(p => p.Story)  // HasOne() specifies the navigation property on the principal side (Person).
-               .WithOne(s => s.AppUser)    // WithOne() specifies the navigation property on the dependent side (Passport).
-               .HasForeignKey<Story>(p => p.AppUserId)  // HasForeignKey<TDependent>() specifies the foreign key property in the dependent entity (Passport).
+               .WithOne(s => s.Owner)    // WithOne() specifies the navigation property on the dependent side (Passport).
+               .HasForeignKey<Story>(p => p.OwnerId)  // HasForeignKey<TDependent>() specifies the foreign key property in the dependent entity (Passport).
                .IsRequired();
             builder.Entity<PostLikeItem>()
                 .HasOne(c => c.Post)

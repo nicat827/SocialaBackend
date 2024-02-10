@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Abstractions.Repositories
 {
-    public interface IStoriesRepository : IGenericRepository<StoryItem>
+    public interface IStoryItemsRepository : IGenericRepository<StoryItem>
     {
     }
 }

@@ -89,15 +89,15 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
         public async Task<T> GetByIdAsync(int id,
             bool isTracking = false,
             bool iqnoreQuery = false,
-            Expression<Func<T, object>>? expression = null,
+            Expression<Func<T, object>>? includeExpression = null,
             params string[] includes)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
             query = query.Where(e => e.Id == id);
-            if (expression is not null)
+            if (includeExpression is not null)
             {
-                query = query.Include(expression);
+                query = query.Include(includeExpression);
                
 
             }

@@ -19,7 +19,7 @@ namespace SocialaBackend.API.Controllers
             _service = service;
         }
         [HttpPost]
-        public async Task<IActionResult> CreateStoryItem(StoryItemPostDto dto)
+        public async Task<IActionResult> CreateStoryItem([FromForm]StoryItemPostDto dto)
         {
             await _service.CreateStoryItemAsync(dto);
             return StatusCode(StatusCodes.Status201Created);

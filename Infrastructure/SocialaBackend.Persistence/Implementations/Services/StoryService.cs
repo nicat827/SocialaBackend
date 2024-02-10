@@ -6,6 +6,7 @@ using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Application.Exceptions.Forbidden;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
@@ -24,48 +25,80 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IFileService _fileService;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
-        private readonly IStoriesRepository _storiesRepository;
+        private readonly IStoryRepository _storyRepository;
+        private readonly IStoryItemsRepository _storyItemsRepository;
 
-        public StoryService(ICloudinaryService cloudinaryService, IFileService fileService, IHttpContextAccessor http, IMapper mapper, UserManager<AppUser> userManager, IStoriesRepository storiesRepository)
+        public StoryService(ICloudinaryService cloudinaryService, IFileService fileService, IHttpContextAccessor http, IMapper mapper, UserManager<AppUser> userManager, IStoryItemsRepository storyItemsRepository, IStoryRepository storyRepository)
         {
             _currentUsername = http.HttpContext.User.Identity.Name;
             _cloudinaryService = cloudinaryService;
             _fileService = fileService;
             _mapper = mapper;
             _userManager = userManager;
-            _storiesRepository = storiesRepository;
+            _storyItemsRepository = storyItemsRepository;
+            _storyRepository = storyRepository;
         }
         public async Task CreateStoryItemAsync(StoryItemPostDto dto)
         {
-            AppUser? user = await _userManager.Users.Where(u => u.UserName == _currentUsername).Include(u => u.Story).FirstOrDefaultAsync();
-            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
+            AppUser user = await _getUser();
             StoryItem newStoryItem = new()
             {
                 Text = dto.Text,
-                Story = user.Story,
+                Story = user.Story
             };
             FileType type = _fileService.ValidateFilesForPost(dto.File);
             string url = await _fileService.CreateFileAsync(dto.File, "uploads", "stories");
             string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(url, type, "uploads", "stories");
             newStoryItem.SourceUrl = cloudinaryUrl;
-            await _storiesRepository.CreateAsync(newStoryItem);
-            await _storiesRepository.SaveChangesAsync();
-
+            await _storyItemsRepository.CreateAsync(newStoryItem);
+            await _storyItemsRepository.SaveChangesAsync();
         }
 
-        public Task<ICollection<StoryItemCurrentGetDto>> GetCurrentUserStoryItemsAsync()
+        public async Task<ICollection<StoryItemCurrentGetDto>> GetCurrentUserStoryItemsAsync()
         {
-            throw new NotImplementedException();
+            AppUser? user =  await _userManager.Users
+                .Where(u => u.UserName == _currentUsername)
+                .Include(u => u.Story)
+                    .ThenInclude(s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
+                .FirstOrDefaultAsync();
+            var orderedItems = user.Story.StoryItems.OrderByDescending(s => s.CreatedAt);
+            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
+            return _mapper.Map<ICollection<StoryItemCurrentGetDto>>(orderedItems);
         }
 
-        public Task<ICollection<StoryGetDto>> GetStoriesAsync()
+        public async Task<ICollection<StoryGetDto>> GetStoriesAsync()
         {
-            throw new NotImplementedException();
-        }
+            AppUser? user = await _userManager.Users
+                .Where(u => u.UserName == _currentUsername)
+                    .Include(u => u.Follows.Where(uf => uf.IsConfirmed == true))
+                .FirstOrDefaultAsync();
+            ICollection<StoryGetDto> dto = new List<StoryGetDto>();
+            foreach (FollowItem userFollow in user.Follows)
+            {
+                Story story = await _storyRepository.Get(s => s.Owner.UserName == userFollow.UserName, includes: new[] { "Owner", "StoryItems" });
+                if (story == null) throw new NotFoundException("User story is not defined!");
+                if (story.StoryItems.Any(si => si.CreatedAt.AddDays(1) > DateTime.Now)) dto.Add(new StoryGetDto {
+                    Id = story.Id,
+                    OwnerImageUrl=userFollow.ImageUrl,
+                    OwnerUserName = userFollow.UserName 
+                });
+            }
+            return dto;
 
-        public Task<ICollection<StoryItemGetDto>> GetStoryItemsAsync(int storyId)
+        }
+        public async Task<ICollection<StoryItemGetDto>> GetStoryItemsAsync(int storyId)
         {
-            throw new NotImplementedException();
+            Story story = await _storyRepository.GetByIdAsync(storyId, expressionIncludes: s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now),
+                            includes: new[] {"Owner", "Owner.Followers" });
+            if (story is null) throw new NotFoundException($"Story with id {storyId} wasnt found!");
+            if (story.Owner.IsPrivate)
+            {
+                if (!story.Owner.Followers.Any(f => f.UserName == _currentUsername && f.IsConfirmed == true))
+                    throw new ForbiddenException("This account is private, follow for seeing stories!");
+            }
+            var orderedItems = story.StoryItems.OrderByDescending(si => si.CreatedAt);
+            return _mapper.Map<ICollection<StoryItemGetDto>>(orderedItems);
+
         }
 
         private async Task<AppUser> _getUser()

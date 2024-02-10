@@ -6,12 +6,11 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public class StoryItemGetDto
+    public class StoryItemWatcherDto
     {
         public int Id { get; set; }
-        public string SourceUrl { get; set; } = null!;
-
-        public string? Text { get; set; }
+        public string? WatcherImageUrl { get; set; }
+        public string WatcherUserName { get; set; } = null!;
         public DateTime CreatedAt { get; set; }
     }
 }

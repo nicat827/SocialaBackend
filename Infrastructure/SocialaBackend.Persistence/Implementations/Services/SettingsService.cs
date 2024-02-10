@@ -13,6 +13,7 @@ using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using SocialaBackend.Persistence.Implementations.Hubs;
+using SocialaBackend.Persistence.Implementations.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
     internal class SettingsService : ISettingsService
     {
         private readonly string _currentUsername;
+        private readonly FollowRepository _followRepository;
+        private readonly FollowerRepository _followerRepository;
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly INotificationRepository _notificationRepository;
         private readonly ICloudinaryService _cloudinaryService;
@@ -32,9 +35,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IEmailService _emailService;
         private readonly IFileService _fileService;
 
-        public SettingsService(IHubContext<NotificationHub> hubContext, INotificationRepository notificationRepository, IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
+        public SettingsService(IHubContext<NotificationHub> hubContext, FollowRepository followRepository, FollowerRepository followerRepository, INotificationRepository notificationRepository, IHttpContextAccessor http, ICloudinaryService cloudinaryService, UserManager<AppUser> userManager, IMapper mapper,IEmailService emailService, IFileService fileService)
         {
             _currentUsername = http.HttpContext.User.Identity.Name;
+            _followRepository = followRepository;
+            _followerRepository = followerRepository;
             _hubContext = hubContext;
             _notificationRepository = notificationRepository;
             _cloudinaryService = cloudinaryService;
@@ -93,6 +98,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<string> ChangeAvatarAsync(IFormFile photo)
         {
             AppUser user = await _getUser();
+           
             await _createAvatar(photo, user);
             await _userManager.UpdateAsync(user);
             return user.ImageUrl;
@@ -204,6 +210,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             string imageUrl = await _fileService.CreateFileAsync(avatar, "uploads", "users", "avatars");
             string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(imageUrl, FileType.Image, "uploads", "users", "avatars");
+            ICollection<FollowerItem> followerItems = await _followerRepository.GetCollection(fi => fi.UserName == currentUser.UserName);
+            ICollection<FollowItem> followItems = await _followRepository.GetCollection(fi => fi.UserName == currentUser.UserName);
+            foreach (var item in followItems) item.ImageUrl = cloudinaryUrl;
+            foreach (var item in followerItems) item.ImageUrl = cloudinaryUrl;
+            await _followerRepository.SaveChangesAsync();
             currentUser.ImageUrl = cloudinaryUrl;
             return cloudinaryUrl;
             

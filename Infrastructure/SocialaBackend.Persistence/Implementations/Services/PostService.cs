@@ -234,7 +234,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         
         {
             if (skip is null) skip = 0;
-            Post? post = await _postRepository.GetByIdAsync(id, expression: p => p.Likes.Skip((int)skip), includes: new[] { "AppUser", "AppUser.Followers", "Likes","Likes.LikedUser" });
+            Post? post = await _postRepository.GetByIdAsync(id, expressionIncludes: p => p.Likes.Skip((int)skip), includes: new[] { "AppUser", "AppUser.Followers", "Likes","Likes.LikedUser" });
           
             if (post is null) throw new NotFoundException($"Post with id {id} wasnt defined!");
             if (post.AppUser.IsPrivate)

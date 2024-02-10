@@ -40,7 +40,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             int id,
             bool isTracking = false,
             bool iqnoreQuery = false,
-            Expression<Func<T, object>>? expression = null,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes);
         Task<T> Get(
             Expression<Func<T, bool>> expression,

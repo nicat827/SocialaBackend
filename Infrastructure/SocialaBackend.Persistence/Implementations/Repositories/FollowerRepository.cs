@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Persistence.Implementations.Repositories
 {
-    internal class StoriesRepository : GenericRepository<StoryItem>, IStoriesRepository
+    internal class FollowerRepository : GenericRepository<FollowerItem>, IFollowerRepository
     {
-        public StoriesRepository(AppDbContext context) : base(context)
+        public FollowerRepository(AppDbContext context) : base(context)
         {
         }
     }
