@@ -1,4 +1,5 @@
 ﻿using SocialaBackend.Domain.Entities;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace SocialaBackend.Application.Dtos
         public int Id { get; set; }
         public string SourceUrl { get; set; } = null!;
         public string? Text { get; set; }
+        public FileType Type { get; set; }
         public DateTime CreatedAt { get; set; }
         public int WatchCount { get; set; }
         public IEnumerable<StoryItemWatcherDto> Watchers { get; set; } = new List<StoryItemWatcherDto>();
