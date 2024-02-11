@@ -14,7 +14,8 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
     public class NotificationHub : Hub
     {
         private readonly INotificationService _service;
-       
+        private  static IList<string> ConnectedUsers = new List<string>();
+        private  static Dictionary<string, int> GroupCount = new Dictionary<string, int>();
         public NotificationHub(INotificationService service)
         {
             _service = service;
@@ -23,19 +24,39 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         {
             var connectionId = Context.ConnectionId;
             await Groups.AddToGroupAsync(connectionId, userName);
+            if (!ConnectedUsers.Any(i => i == userName)) ConnectedUsers.Add(userName);
+            if (!GroupCount.ContainsKey(userName))
+            {
+                GroupCount[userName] = 1;
+                await Clients.All.SendAsync("OnlineUsers", ConnectedUsers);
+                Console.BackgroundColor = ConsoleColor.Green;
+                Console.WriteLine(GroupCount[userName]);
+                Console.ResetColor();
+            }
+            else
+            {
+                GroupCount[userName] = GroupCount[userName] + 1;
+                await Clients.Client(connectionId).SendAsync("OnlineUsers", ConnectedUsers);
+
+            }
+
+
             IEnumerable<NotificationsGetDto> notifications = await _service.GetLastNotifications(userName);
             await Clients.Client(connectionId).SendAsync("LatestNotifications", notifications);
         }
-
-
+   
         public async Task Disconnect(string userName)
         {
             var connectionId = Context.ConnectionId;
-            Console.BackgroundColor = ConsoleColor.Green;
-            Console.WriteLine("#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$3333333333333");
-            Console.ResetColor();
-
             await Groups.RemoveFromGroupAsync(connectionId, userName);
+            GroupCount[userName] = GroupCount[userName] - 1;
+            if (GroupCount[userName] == 0)
+            {
+                ConnectedUsers.Remove(userName);
+                GroupCount.Remove(userName);
+                await Clients.All.SendAsync("OnlineUsers", ConnectedUsers);
+            }
+            
         }
 
         public async Task SendLikeNotification(string userName)
