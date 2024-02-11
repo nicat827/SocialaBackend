@@ -390,7 +390,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         }
 
-        public async Task<AppUserRegisterResponseDto> SetNewPasswordAsync(AppUserResetPasswordDto dto)
+        public async Task SetNewPasswordAsync(AppUserResetPasswordDto dto)
         {
             AppUser? user = await _userManager.FindByEmailAsync(dto.Email);
             if (user is null) throw new AppUserNotFoundException($"User with email {dto.Email} doesnt exists!");
@@ -415,11 +415,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
-            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
-            user.RefreshToken = tokens.RefreshToken;
-            user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
-            await _userManager.UpdateAsync(user);
-            return new AppUserRegisterResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
 
         }
 

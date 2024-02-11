@@ -14,7 +14,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
     public class NotificationHub : Hub
     {
         private readonly INotificationService _service;
-
+       
         public NotificationHub(INotificationService service)
         {
             _service = service;
@@ -31,6 +31,10 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         public async Task Disconnect(string userName)
         {
             var connectionId = Context.ConnectionId;
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.WriteLine("#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$3333333333333");
+            Console.ResetColor();
+
             await Groups.RemoveFromGroupAsync(connectionId, userName);
         }
 
