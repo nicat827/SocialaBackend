@@ -198,6 +198,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUserName)
+                .Include(u => u.Story)
                 .Include(u => u.LikedAvatars)
                 .Include(u => u.Follows)
                 .Include(u => u.Followers)
@@ -213,6 +214,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
             dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
+            dto.StoryId = user.Story.Id;
+            dto.LastStoryPostedAt = user.Story.LastItemAddedAt;
             return dto;
         }
         public async Task<bool> IsPrivateAsync(string username)

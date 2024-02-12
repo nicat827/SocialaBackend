@@ -58,8 +58,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
             string url = await _fileService.CreateFileAsync(dto.File, "uploads", "stories");
             string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(url, type, "uploads", "stories");
             newStoryItem.SourceUrl = cloudinaryUrl;
+            newStoryItem.Type = type;
             await _storyItemsRepository.CreateAsync(newStoryItem);
-            user.Story.LastItemAddedAt = DateTime.Now;
+            await _storyItemsRepository.SaveChangesAsync();
+            user.Story.LastItemAddedAt = newStoryItem.CreatedAt;
             await _storyItemsRepository.SaveChangesAsync();
         }
 
@@ -70,12 +72,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.Story)
                     .ThenInclude(s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now && si.IsDeleted == false))
                 .FirstOrDefaultAsync();
-            var orderedItems = user.Story.StoryItems.OrderByDescending(s => s.CreatedAt);
+            var orderedItems = user.Story.StoryItems.OrderBy(s => s.CreatedAt);
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
             return _mapper.Map<ICollection<StoryItemCurrentGetDto>>(orderedItems);
         }
 
-        public async Task<ICollection<StoryGetDto>> GetStoriesAsync()
+        public async Task<IEnumerable<StoryGetDto>> GetStoriesAsync()
         {
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUsername)
@@ -92,11 +94,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         Id = story.Id,
                         OwnerImageUrl=userFollow.ImageUrl,
                         OwnerUserName = userFollow.UserName,
+                        LastStoryPostedAt = story.LastItemAddedAt
                     });
                 }
             }
             var sortedDto = dto.OrderByDescending(s => s.LastStoryPostedAt);
-            return dto;
+            return sortedDto;
 
         }
         
@@ -138,7 +141,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (!story.Owner.Followers.Any(f => f.UserName == _currentUsername && f.IsConfirmed == true))
                     throw new ForbiddenException("This account is private, follow for seeing stories!");
             }
-            var orderedItems = story.StoryItems.OrderByDescending(si => si.CreatedAt);
+            var orderedItems = story.StoryItems.OrderBy(si => si.CreatedAt);
             return _mapper.Map<ICollection<StoryItemGetDto>>(orderedItems);
 
         }

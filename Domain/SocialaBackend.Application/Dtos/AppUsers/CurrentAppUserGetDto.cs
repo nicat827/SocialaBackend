@@ -13,7 +13,7 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public string Surname { get; set; } = null!;
         public string UserName { get; set; } = null!;
         public string Email { get; set; } = null!;
-
+        public int StoryId { get; set; }
         public string? Bio { get; set; }
 
         public string? FacebookLink { get; set; }
@@ -23,6 +23,8 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public Gender Gender { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsPrivate { get; set; }
+
+        public DateTime? LastStoryPostedAt { get; set; }
 
         public string? BackgroundImage { get; set; }
         public ICollection<NotificationsGetDto> Notifications { get; set; } = new List<NotificationsGetDto>();

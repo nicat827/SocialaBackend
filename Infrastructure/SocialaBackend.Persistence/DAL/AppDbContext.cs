@@ -20,6 +20,9 @@ namespace SocialaBackend.Persistence.DAL
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Reply> Replies { get; set; }
+        public DbSet<Chat> Chats { get; set; }
+
+        public DbSet<Message> Messages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<AvatarLikeItem> AvatarLikeItems { get; set; }
         public DbSet<PostLikeItem> PostLikeItems { get; set; }
@@ -43,7 +46,13 @@ namespace SocialaBackend.Persistence.DAL
                .HasOne(p => p.LikedUser)
                .WithMany(u => u.LikedPosts)
                .HasForeignKey(p => p.LikedUserId)
-               .OnDelete(DeleteBehavior.NoAction); // Каскадное удаление
+               .OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Chat>()
+               .HasOne(p => p.SecondUser)
+               .WithMany(u => u.Chats)
+               .HasForeignKey(p => p.SecondUserId)
+               .OnDelete(DeleteBehavior.NoAction);
+            // Каскадное удаление
 
             base.OnModelCreating(builder);
         }

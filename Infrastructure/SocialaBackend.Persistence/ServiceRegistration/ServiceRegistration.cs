@@ -50,11 +50,14 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<IFollowRepository, FollowRepository>();
             services.AddScoped<IFollowerRepository, FollowerRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IMessageRepository, MessageRepository>();
+            services.AddScoped<IChatRepository, ChatRepository>();
             //services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ISettingsService, SettingsService>();
+            services.AddScoped<IChatService, ChatService>();
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<AppDbContextInitializer>();
         }

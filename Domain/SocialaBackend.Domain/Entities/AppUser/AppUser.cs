@@ -38,6 +38,8 @@ namespace SocialaBackend.Domain.Entities.User
         //relational
 
         public Story Story { get; set; } = null!;
+
+        public ICollection<Chat> Chats { get; set; } = new List<Chat>();
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public ICollection<AvatarLikeItem> LikedAvatars { get; set; } = new List<AvatarLikeItem>();
         public ICollection<FollowItem> Follows { get; set; } = new List<FollowItem>();
