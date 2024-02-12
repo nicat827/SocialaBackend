@@ -12,8 +12,9 @@ namespace SocialaBackend.Application.Abstractions.Services
     {
         Task<MessageGetDto> SendMessageAsync(MessagePostDto dto);
 
-        Task SendMessageFromProfileAsync(MessagePostDtoFromProfile dto);
-        Task<ICollection<ChatItemGetDto>> GetChatItemsAsync();
+        Task<(MessageGetDto, ChatGetDto)> SendMessageFromProfileAsync(MessagePostDtoFromProfile dto);
+        Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName);
+
         Task<ChatGetDto> GetChatByIdAsync(int id);
     }
 }

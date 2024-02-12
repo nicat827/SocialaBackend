@@ -39,15 +39,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
             var firstUser = chat.FirstUser;
             //var messages = chat.Messages.OrderByDescending(m => m.CreatedAt);
             ICollection<MessageGetDto> messagesDto = new List<MessageGetDto>();
-            foreach (Message message in  chat.Messages) messagesDto.Add(new MessageGetDto { Text = message.Text, IsChecked = message.IsChecked}); 
+            foreach (Message message in  chat.Messages) messagesDto.Add(new MessageGetDto {Sender = message.SendedBy, Text = message.Text, IsChecked = message.IsChecked}); 
             return new ChatGetDto
             {
                 ChatPartnerImageUrl = firstUser.UserName == _currentUsername ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
                 ChatPartnerUserName = firstUser.UserName == _currentUsername ? chat.SecondUser.UserName : chat.FirstUser.UserName,
-                Messages = messagesDto
-                
+                Messages = messagesDto,
+                ConnectionId = chat.ConnectionId,
             };
         }
+
+    
 
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
         {
@@ -66,10 +68,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
             chat.LastMessageSendedBy = _currentUsername;
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
-            return new MessageGetDto { CreatedAt = message.CreatedAt, Id = message.Id, Text = message.Text };
+            return new MessageGetDto { CreatedAt = message.CreatedAt, Id = message.Id, Text = message.Text, Sender = message.SendedBy };
         }
 
-        public async Task SendMessageFromProfileAsync(MessagePostDtoFromProfile dto)
+        public async Task<(MessageGetDto, ChatGetDto)> SendMessageFromProfileAsync(MessagePostDtoFromProfile dto)
         {
             AppUser? receiver = await _userManager.Users
                 .Where(u => dto.ReceiverUsername == u.UserName)
@@ -89,6 +91,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 {
                     FirstUserId = _currentUsername,
                     SecondUserId = receiver.Id,
+                    ConnectionId = Guid.NewGuid().ToString()
 
                 };
             }
@@ -104,21 +107,32 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _chatRepository.CreateAsync(chat);
             await _messageRepository.CreateAsync(newMessage);
             await _chatRepository.SaveChangesAsync();
+            MessageGetDto messageDto = new MessageGetDto { CreatedAt = newMessage.CreatedAt, Id = newMessage.Id, Text = newMessage.Text, Sender = newMessage.SendedBy };
+            var firstUser = chat.FirstUser;
+            ChatGetDto chatDto = new ChatGetDto
+            {
+                ChatPartnerImageUrl = firstUser.UserName == _currentUsername ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
+                ChatPartnerUserName = firstUser.UserName == _currentUsername ? chat.SecondUser.UserName : chat.FirstUser.UserName,
+                Messages = new List<MessageGetDto>(),
+                ConnectionId = chat.ConnectionId,
+            };
+            return (messageDto, chatDto);
+
 
 
         }
 
-        public async Task<ICollection<ChatItemGetDto>> GetChatItemsAsync()
+        public async Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName)
         {
             ICollection<Chat> userChats = await _chatRepository.GetCollection(
-                c => c.FirstUser.UserName == _currentUsername
-                || c.SecondUser.UserName == _currentUsername,
+                c => c.FirstUser.UserName == userName
+                || c.SecondUser.UserName == userName,
                 includes: new[] { "FirstUser", "SecondUser" });
             var orderedChats = userChats.OrderByDescending(c => c.LastMessageSendedAt);
             ICollection<ChatItemGetDto> dto = new List<ChatItemGetDto>();
             foreach (Chat chat in orderedChats)
             {
-                if (chat.FirstUser.UserName == _currentUsername)
+                if (chat.FirstUser.UserName == userName)
                 {
                     dto.Add(new ChatItemGetDto
                     {

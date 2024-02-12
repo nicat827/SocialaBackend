@@ -10,5 +10,6 @@ namespace SocialaBackend.Application.Dtos
     {
         public int ChatId { get; set; }
         public string Text { get; set; } = null!;
+        public string Sender { get; set; } = null!;
     }
 }

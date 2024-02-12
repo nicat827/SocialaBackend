@@ -29,9 +29,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             {
                 GroupCount[userName] = 1;
                 await Clients.All.SendAsync("OnlineUsers", ConnectedUsers);
-                Console.BackgroundColor = ConsoleColor.Green;
-                Console.WriteLine(GroupCount[userName]);
-                Console.ResetColor();
+               
             }
             else
             {

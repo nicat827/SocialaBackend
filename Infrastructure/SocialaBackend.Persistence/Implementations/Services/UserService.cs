@@ -398,7 +398,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user = await _userManager.FindByEmailAsync(dto.Email);
             if (user is null) throw new AppUserNotFoundException($"User with email {dto.Email} doesnt exists!");
 
-            var res = await _userManager.ResetPasswordAsync(user, dto.Token, dto.Password);
+            var decodedToken = WebEncoders.Base64UrlDecode(dto.Token);
+            string normalToken = Encoding.UTF8.GetString(decodedToken);
+            var res = await _userManager.ResetPasswordAsync(user, normalToken, dto.Password);
             if (!res.Succeeded)
             {
                 StringBuilder sb = new();

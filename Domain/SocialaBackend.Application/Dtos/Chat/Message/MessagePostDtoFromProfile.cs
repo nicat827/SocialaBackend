@@ -12,5 +12,7 @@ namespace SocialaBackend.Application.Dtos
 
         public string Text { get; set; } = null!;
 
+        public string Sender { get; set; } = null!;
+
     }
 }
