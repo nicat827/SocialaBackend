@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
@@ -22,50 +23,103 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IMessageRepository _messageRepository;
         private readonly IChatRepository _chatRepository;
         private readonly UserManager<AppUser> _userManager;
-        private readonly string _currentUsername;
-        public ChatService(IMessageRepository messageRepository, IHttpContextAccessor http, IChatRepository chatRepository, UserManager<AppUser> userManager)
+        public ChatService(IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
         {
             _messageRepository = messageRepository;
             _chatRepository = chatRepository;
             _userManager = userManager;
-            _currentUsername = http.HttpContext.User.Identity.Name;
+
+
         }
-        public async Task<ChatGetDto> GetChatByIdAsync(int id)
+        public async Task<ChatGetDto> GetChatByIdAsync(int id, string userName)
         {
             Chat? chat = await _chatRepository.GetByIdAsync(id, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes: new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {id} doesnt exits!");
-            if (chat.FirstUser.UserName != _currentUsername || chat.SecondUser.UserName != _currentUsername)
+            if (chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
                 throw new DontHavePermissionException("You cant get this chat!");
             var firstUser = chat.FirstUser;
             //var messages = chat.Messages.OrderByDescending(m => m.CreatedAt);
             ICollection<MessageGetDto> messagesDto = new List<MessageGetDto>();
-            foreach (Message message in  chat.Messages) messagesDto.Add(new MessageGetDto {Sender = message.SendedBy, Text = message.Text, IsChecked = message.IsChecked}); 
+            foreach (Message message in  chat.Messages) messagesDto.Add(new MessageGetDto {Id=message.Id, CreatedAt = message.CreatedAt, Sender = message.SendedBy, Text = message.Text, IsChecked = message.IsChecked}); 
             return new ChatGetDto
             {
-                ChatPartnerImageUrl = firstUser.UserName == _currentUsername ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
-                ChatPartnerUserName = firstUser.UserName == _currentUsername ? chat.SecondUser.UserName : chat.FirstUser.UserName,
+                ChatPartnerImageUrl = firstUser.UserName == userName ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
+                ChatPartnerUserName = firstUser.UserName == userName ? chat.SecondUser.UserName : chat.FirstUser.UserName,
                 Messages = messagesDto,
                 ConnectionId = chat.ConnectionId,
             };
         }
 
-    
+        public async Task<ICollection<ChatItemSearchGetDto>> SearchChatUsersAsync(string searchParam, string currentUsername)
+        {
+            AppUser? currentUser = await _userManager.Users
+                .Where(u => u.UserName == currentUsername)
+                .Include(u => u.Followers.Where(f => f.IsConfirmed == true))
+                .Include(u => u.Follows.Where(f => f.IsConfirmed == true))
+                .FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException($"User with username {currentUser} doesnt exists!");
+
+            ICollection<FollowerItem> filteredFollowers = currentUser.Followers.Where(f => 
+            f.UserName.Contains(searchParam) 
+            || f.Name.ToLower().Contains(searchParam.ToLower())
+            || f.Surname.ToLower().Contains(searchParam.ToLower())
+            ).ToList();
+
+            ICollection<FollowItem> filteredFollows = currentUser.Follows.Where(f =>
+            f.UserName.Contains(searchParam)
+            || f.Name.ToLower().Contains(searchParam.ToLower())
+            || f.Surname.ToLower().Contains(searchParam.ToLower())
+            ).ToList();
+            ICollection<ChatItemSearchGetDto> dto = new List<ChatItemSearchGetDto>();
+
+            foreach (FollowerItem follower in filteredFollowers)
+            {
+                Chat? chat = await _chatRepository.Get(
+                    c => c.FirstUser.UserName == currentUsername && c.SecondUser.UserName == follower.UserName ||
+                    c.FirstUser.UserName == follower.UserName && c.SecondUser.UserName == currentUsername);
+                dto.Add(new ChatItemSearchGetDto
+                {
+                    ChatId = chat is null ? null : chat.Id,
+                    ImageUrl = follower.ImageUrl,
+                    Name = follower.Name,
+                    Surname = follower.Surname,
+                    UserName = follower.UserName
+                });
+            }
+            foreach (FollowItem follow in filteredFollows)
+            {
+                Chat? chat = await _chatRepository.Get(
+                    c => c.FirstUser.UserName == currentUsername && c.SecondUser.UserName == follow.UserName ||
+                    c.FirstUser.UserName == follow.UserName && c.SecondUser.UserName == currentUsername);
+                dto.Add(new ChatItemSearchGetDto
+                {
+                    ChatId = chat is null ? null : chat.Id,
+                    ImageUrl = follow.ImageUrl,
+                    Name = follow.Name,
+                    Surname = follow.Surname,
+                    UserName = follow.UserName
+                });
+            }
+            return dto;
+
+
+        }
 
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
         {
             Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId, includes:new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {dto.ChatId} doesnt exists!");
-            if (chat.FirstUser.UserName != _currentUsername || chat.SecondUser.UserName != _currentUsername)
+            if (chat.FirstUser.UserName != dto.Sender || chat.SecondUser.UserName != dto.Sender)
                 throw new DontHavePermissionException("You cant write message to this chat!");
             Message message = new Message
             {
                 Text = dto.Text,
-                SendedBy = _currentUsername,
+                SendedBy = dto.Sender,
                 ChatId = chat.Id
             };
             chat.LastMessage = dto.Text;
             chat.LastMessageSendedAt = DateTime.Now;
-            chat.LastMessageSendedBy = _currentUsername;
+            chat.LastMessageSendedBy = dto.Sender;
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
             return new MessageGetDto { CreatedAt = message.CreatedAt, Id = message.Id, Text = message.Text, Sender = message.SendedBy };
@@ -78,18 +132,22 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.Chats)
                 .Include(u => u.Followers)
                 .FirstOrDefaultAsync();
-
+            AppUser? sender = await _userManager.FindByNameAsync(dto.Sender);
+            if (sender == null) throw new AppUserNotFoundException("Sender wasnt found!");
             if (receiver is null) throw new NotFoundException($"Receiver with username {dto.ReceiverUsername} doesnt exits!");
-            if (receiver.IsPrivate && !receiver.Followers.Any(f => f.UserName == _currentUsername && f.IsConfirmed == true))
+            if (receiver.IsPrivate && !receiver.Followers.Any(f => f.UserName == dto.Sender && f.IsConfirmed == true))
                 throw new DontHavePermissionException("Follow first, for send messages!");
-            Chat? chat = await _chatRepository.Get(c => c.FirstUser.UserName == _currentUsername && c.SecondUser.UserName == receiver.UserName
-                                                    || c.FirstUser.UserName == receiver.UserName && c.SecondUser.UserName == _currentUsername,
+            Chat? chat = await _chatRepository.Get(c => c.FirstUser.UserName == dto.Sender && c.SecondUser.UserName == receiver.UserName
+                                                    || c.FirstUser.UserName == receiver.UserName && c.SecondUser.UserName == dto.Sender,
+                                                    isTracking:true,
                                                     includes: new[] {"FirstUser", "SecondUser"});
+            bool isNew = false;
             if (chat is null)
             {
+                isNew = true;
                 chat = new Chat
                 {
-                    FirstUserId = _currentUsername,
+                    FirstUserId = sender.Id,
                     SecondUserId = receiver.Id,
                     ConnectionId = Guid.NewGuid().ToString()
 
@@ -98,23 +156,26 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Message newMessage = new Message
             {
                 Chat = chat,
-                SendedBy = _currentUsername,
+                SendedBy = dto.Sender,
                 Text = dto.Text,
             };
             chat.LastMessage = newMessage.Text;
             chat.LastMessageSendedAt = DateTime.Now;
-            chat.LastMessageSendedBy = _currentUsername;
-            await _chatRepository.CreateAsync(chat);
+            chat.LastMessageSendedBy = dto.Sender;
+            chat.LastMessageIsChecked = false;
+            if (isNew) await _chatRepository.CreateAsync(chat);
+
             await _messageRepository.CreateAsync(newMessage);
             await _chatRepository.SaveChangesAsync();
             MessageGetDto messageDto = new MessageGetDto { CreatedAt = newMessage.CreatedAt, Id = newMessage.Id, Text = newMessage.Text, Sender = newMessage.SendedBy };
             var firstUser = chat.FirstUser;
             ChatGetDto chatDto = new ChatGetDto
             {
-                ChatPartnerImageUrl = firstUser.UserName == _currentUsername ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
-                ChatPartnerUserName = firstUser.UserName == _currentUsername ? chat.SecondUser.UserName : chat.FirstUser.UserName,
+                ChatPartnerImageUrl = firstUser.UserName == dto.Sender ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
+                ChatPartnerUserName = firstUser.UserName == dto.Sender ? chat.SecondUser.UserName : chat.FirstUser.UserName,
                 Messages = new List<MessageGetDto>(),
                 ConnectionId = chat.ConnectionId,
+                Id = chat.Id,
             };
             return (messageDto, chatDto);
 
@@ -140,6 +201,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         ChatPartnerUserName = chat.SecondUser.UserName,
                         ChatPartnerImageUrl = chat.SecondUser.ImageUrl,
                         LastMessage = chat.LastMessage,
+                        LastMessageIsChecked = chat.LastMessageIsChecked,
                         LastMessageSendedAt = chat.LastMessageSendedAt,
                         LastMessageSendedBy = chat.LastMessageSendedBy
                     });
@@ -152,6 +214,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         ChatPartnerUserName = chat.FirstUser.UserName,
                         ChatPartnerImageUrl = chat.FirstUser.ImageUrl,
                         LastMessage = chat.LastMessage,
+                        LastMessageIsChecked = chat.LastMessageIsChecked,
                         LastMessageSendedAt = chat.LastMessageSendedAt,
                         LastMessageSendedBy = chat.LastMessageSendedBy
                     });

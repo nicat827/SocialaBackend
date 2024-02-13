@@ -16,6 +16,7 @@ using SocialaBackend.Application.Exceptions.Token;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Common;
 using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
@@ -318,6 +319,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
 
             if (await _userManager.Users.AnyAsync(u => u.UserName == dto.Username)) throw new UserAlreadyExistException($"User with username {dto.Username} already exists!");
+            dto.Name = dto.Name.Capitalize();
+            dto.Surname = dto.Surname.Capitalize();
             AppUser newUser = _mapper.Map<AppUser>(dto);
             newUser.Story = new Story();
             var res = await _userManager.CreateAsync(newUser, dto.Password);

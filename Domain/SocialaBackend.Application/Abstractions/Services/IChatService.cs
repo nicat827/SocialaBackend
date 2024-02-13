@@ -11,10 +11,10 @@ namespace SocialaBackend.Application.Abstractions.Services
     public interface IChatService
     {
         Task<MessageGetDto> SendMessageAsync(MessagePostDto dto);
-
+        Task<ICollection<ChatItemSearchGetDto>> SearchChatUsersAsync(string searchParam, string currentUsername);
         Task<(MessageGetDto, ChatGetDto)> SendMessageFromProfileAsync(MessagePostDtoFromProfile dto);
         Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName);
 
-        Task<ChatGetDto> GetChatByIdAsync(int id);
+        Task<ChatGetDto> GetChatByIdAsync(int id, string userName);
     }
 }

@@ -12,6 +12,7 @@ using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Common;
 using SocialaBackend.Persistence.Implementations.Hubs;
 using SocialaBackend.Persistence.Implementations.Repositories;
 using System;
@@ -81,8 +82,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser currentUser = await _getUser();
          
             currentUser.Bio = dto.Bio;
-            currentUser.Surname = dto.Surname;
-            currentUser.Name = dto.Name;
+            currentUser.Surname = dto.Surname.Capitalize();
+            currentUser.Name = dto.Name.Capitalize();
             currentUser.Gender = dto.Gender;
             currentUser.IsPrivate = dto.IsPrivate;
             if (currentUser.Email != dto.Email)

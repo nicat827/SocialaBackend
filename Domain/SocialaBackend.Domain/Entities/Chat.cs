@@ -21,6 +21,7 @@ namespace SocialaBackend.Domain.Entities
         public DateTime? LastMessageSendedAt { get; set; }
         public string LastMessageSendedBy { get; set; } = null!;
 
+        public bool LastMessageIsChecked { get; set; }
         public string ConnectionId { get; set; } = null!;
 
     }

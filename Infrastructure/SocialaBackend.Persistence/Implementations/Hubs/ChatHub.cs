@@ -17,19 +17,18 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
     public class ChatHub:Hub
     {
         private readonly IMessageRepository _messageRepository;
+        private readonly IChatRepository _chatRepository;
         private readonly IChatService _chatService;
 
         private static Dictionary<string, ICollection<(string,int)>> Chats = new Dictionary<string, ICollection<(string,int)>>();
-        public ChatHub(IMessageRepository messageRepository, IChatService chatService)
+        public ChatHub(IMessageRepository messageRepository, IChatRepository chatRepository, IChatService chatService)
         {
             _messageRepository = messageRepository;
+            _chatRepository = chatRepository;
             _chatService = chatService;
         }
         public async Task Connect(string userName)
         {
-            Console.BackgroundColor = ConsoleColor.Green;
-            Console.WriteLine(userName + " USERNAMEEEEEE");
-            Console.ResetColor();
             ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(userName);
             await Groups.AddToGroupAsync(Context.ConnectionId, userName);
             //if (!GroupCount.ContainsKey(_currentUserName)) GroupCount[_currentUserName] = 1;
@@ -41,15 +40,22 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
         public async Task Disconnect(string userName)
         {
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.WriteLine("DEFAULTTT");
+            Console.ResetColor();
+
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, userName);
           
         }
 
         public async Task DisconnectChat(int chatId, string userName)
         {
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.WriteLine("WORKINGGGGGG");
+            Console.ResetColor();
             try
             {
-                ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId);
+                ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId, userName);
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, chat.ConnectionId);
                 if (Chats.ContainsKey(chat.ConnectionId))
                 {
@@ -71,17 +77,35 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
         public async Task ConnectToChat(int chatId, string userName)
         {
-            ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId);
+            ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId, userName);
+            var lastMess = chat.Messages.FirstOrDefault();
+            if (lastMess is not null)
+            {
+                if (!lastMess.IsChecked && lastMess.Sender != userName)
+                {
+                    Chat chatFromDb = await _chatRepository.GetByIdAsync(chatId, true);
+                    chatFromDb.LastMessageIsChecked = true;
+                    await _chatRepository.SaveChangesAsync();
+                    ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(userName);
+                    ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(chat.ChatPartnerUserName);
+
+                    await Clients.Group(userName).SendAsync("GetChatItems", userChatItems);
+                    await Clients.Group(chat.ChatPartnerUserName).SendAsync("GetChatItems", partnerChatItems);
+
+                }
+            }
             foreach (MessageGetDto message in chat.Messages)
             {
                 if (message.IsChecked == false && message.Sender != userName)
                 {
                     message.IsChecked = true;
+                    
                     Message messFromDb = await _messageRepository.GetByIdAsync(message.Id);
                     messFromDb.IsChecked = true;
                     await _messageRepository.SaveChangesAsync();
                 }
             }
+            
 
             await Groups.AddToGroupAsync(Context.ConnectionId, chat.ConnectionId);
             if (!Chats.ContainsKey(chat.ConnectionId))
@@ -95,14 +119,15 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 if (findedTuple.Item1 is null) usersInChat.Add((userName, 1));
                 else findedTuple.Item2++;
             }
-            await Clients.Client(Context.ConnectionId).SendAsync("ChatConnect", chat);
+
+            await Clients.Client(Context.ConnectionId).SendAsync("ChatConnectResponse", chat);
         }
 
         public async Task SendMessageByChatId(MessagePostDto dto)
         {
             try
             {
-                ChatGetDto chat = await _chatService.GetChatByIdAsync(dto.ChatId);
+                ChatGetDto chat = await _chatService.GetChatByIdAsync(dto.ChatId, dto.Sender);
                 MessageGetDto sendedMessage = await _chatService.SendMessageAsync(dto);
                 if (Chats.ContainsKey(chat.ConnectionId))
                 {
@@ -112,6 +137,8 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                         sendedMessage.IsChecked = true;
                         Message messFromDb = await _messageRepository.GetByIdAsync(sendedMessage.Id);
                         messFromDb.IsChecked = true;
+                        Chat chatFromDb = await _chatRepository.GetByIdAsync(dto.ChatId, true);
+                        chatFromDb.LastMessageIsChecked = true;
                         await _messageRepository.SaveChangesAsync();
                     }
                 }
@@ -121,6 +148,22 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 await Clients.Group(chat.ConnectionId).SendAsync("RecieveMessage", sendedMessage);
                 await Clients.Group(dto.Sender).SendAsync("GetChatItems", userChatItems);
                 await Clients.Group(chat.ChatPartnerUserName).SendAsync("GetChatItems", partnerChatItems);
+            }
+            catch (BaseException ex)
+            {
+                await Clients.Client(Context.ConnectionId).SendAsync("SendMessageError", $"{ex.Message}");
+            }
+        }
+
+        public async Task SearchChatUsers(string searchParam, string userName)
+        {
+            try
+            {
+                ICollection<ChatItemSearchGetDto> searchedUsers = await _chatService.SearchChatUsersAsync(searchParam, userName);
+                Console.BackgroundColor = ConsoleColor.Green;
+                Console.WriteLine(searchParam);
+                Console.ResetColor();
+                await Clients.Client(Context.ConnectionId).SendAsync("GetSearchedUsers", searchedUsers);
             }
             catch (BaseException ex)
             {
@@ -141,6 +184,8 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                         sendedMessage.IsChecked = true;
                         Message messFromDb = await _messageRepository.GetByIdAsync(sendedMessage.Id);
                         messFromDb.IsChecked = true;
+                        Chat chatFromDb = await _chatRepository.GetByIdAsync(chat.Id, true);
+                        chatFromDb.LastMessageIsChecked = true;
                         await _messageRepository.SaveChangesAsync();
                     }
                 }
