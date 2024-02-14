@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace SocialaBackend.Persistence.Implementations.Hubs
 {
@@ -18,14 +19,18 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         private readonly INotificationService _service;
         private  static IList<string> ConnectedUsers = new List<string>();
         private  static Dictionary<string, int> GroupCount = new Dictionary<string, int>();
+        private  static Dictionary<string, string> DictionaryConnect = new Dictionary<string, string>();
         public NotificationHub(IChatService chatService, INotificationService service)
         {
             _chatService = chatService;
             _service = service;
         }
+
+    
         public async Task Connect(string userName)
         {
             var connectionId = Context.ConnectionId;
+            DictionaryConnect[connectionId] = userName;
             await Groups.AddToGroupAsync(connectionId, userName);
             if (!ConnectedUsers.Any(i => i == userName)) ConnectedUsers.Add(userName);
             if (!GroupCount.ContainsKey(userName))
@@ -43,22 +48,38 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             IEnumerable<NotificationsGetDto> notifications = await _service.GetLastNotifications(userName);
             await Clients.Client(connectionId).SendAsync("LatestNotifications", notifications);
           
-            //int count = await _chatService.GetNewMessagesCountAsync(userName);
-            //await Clients.Client(connectionId).SendAsync("GetNewMessagesCountRes", count);
         }
    
-        public async Task Disconnect(string userName)
-        {
-            var connectionId = Context.ConnectionId;
-            await Groups.RemoveFromGroupAsync(connectionId, userName);
-            GroupCount[userName] = GroupCount[userName] - 1;
-            if (GroupCount[userName] == 0)
-            {
-                ConnectedUsers.Remove(userName);
-                GroupCount.Remove(userName);
-                await Clients.All.SendAsync("OnlineUsers", ConnectedUsers);
-            }
+        //public async Task Disconnect(string userName)
+        //{
+        //    var connectionId = Context.ConnectionId;
+        //    await Groups.RemoveFromGroupAsync(connectionId, userName);
+        //    GroupCount[userName] = GroupCount[userName] - 1;
+        //    if (GroupCount[userName] == 0)
+        //    {
+        //        ConnectedUsers.Remove(userName);
+        //        GroupCount.Remove(userName);
+        //        await Clients.All.SendAsync("OnlineUsers", ConnectedUsers);
+        //    }
             
+        //}
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+           
+            if (DictionaryConnect.TryGetValue(Context.ConnectionId, out var userName))
+            {
+                
+                DictionaryConnect.Remove(Context.ConnectionId);
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, userName);
+                GroupCount[userName] = GroupCount[userName] - 1;
+                if (GroupCount[userName] == 0)
+                {
+                    ConnectedUsers.Remove(userName);
+                    GroupCount.Remove(userName);
+                    await Clients.All.SendAsync("OnlineUsers", ConnectedUsers);
+                }
+            }
         }
 
         public async Task SendLikeNotification(string userName)

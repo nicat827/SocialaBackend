@@ -139,7 +139,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId, includes:new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {dto.ChatId} doesnt exists!");
-            if (chat.FirstUser.UserName != dto.Sender || chat.SecondUser.UserName != dto.Sender)
+            if (chat.FirstUser.UserName != dto.Sender && chat.SecondUser.UserName != dto.Sender)
                 throw new DontHavePermissionException("You cant write message to this chat!");
             Message message = new Message
             {
