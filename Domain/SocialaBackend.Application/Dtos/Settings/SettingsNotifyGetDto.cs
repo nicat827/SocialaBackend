@@ -10,6 +10,7 @@ namespace SocialaBackend.Application.Dtos.Settings
     {
         public bool PhotoLikeNotify { get; set; }
         public bool PostLikeNotify { get; set; }
+        public bool PostCommentNotify { get; set; }
         public bool FollowerNotify { get; set; }
     }
 }

@@ -10,11 +10,10 @@ namespace SocialaBackend.Domain.Enums
 {
     [JsonConverter(typeof(StringEnumConverter))]
 
-    public enum UserRole
+    public enum NotificationType
     {
-        Member,
-        ConfirmedMember,
-        Moderator,
-        Admin
+        System,
+        Email,
+        Custom
     }
 }

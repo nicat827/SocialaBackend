@@ -29,7 +29,11 @@ namespace SocialaBackend.Domain.Entities.User
 
         public bool PhotoLikeNotify { get; set; } = true;
         public bool PostLikeNotify { get; set; } = true;
+        public bool PostCommentNotify { get; set; } = true;
+
         public bool FollowerNotify { get; set; } = true;
+
+
 
         public string? RefreshToken { get; set; } = null!;
 

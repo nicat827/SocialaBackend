@@ -49,6 +49,7 @@ namespace SocialaBackend.API.Controllers
             return NoContent();
         }
 
+
         [HttpGet("currentUserItems")]
         public async Task<IActionResult> GetCurrentUserItems()
         {

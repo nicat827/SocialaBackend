@@ -15,6 +15,8 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<SettingsDescriptionGetDto> GetDescriptionAsync();
         Task<SettingsSocialGetDto> GetSocialLinksAsync();
         Task<SettingsNotifyGetDto> GetNotifySettingsAsync();
+        Task CheckNotificationsAsync(ICollection<int> notificationsIds);
+
         Task<string> ChangeAvatarAsync(IFormFile photo);
         Task<string> ChangeBackgroundAsync(IFormFile photo);
         Task<string?> ChangeSocialMediaLinksAsync(SettingsSocialPutDto dto);

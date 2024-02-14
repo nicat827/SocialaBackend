@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public class DisconnectDto
+    public class NotificationsCheckDto
     {
-        public int ChatId { get; set; }
-
-        public string UserName { get; set; } = null!;
+        public ICollection<int> Notifications { get; set; } = null!;
     }
 }

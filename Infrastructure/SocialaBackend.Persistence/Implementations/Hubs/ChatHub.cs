@@ -38,6 +38,8 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
         }
 
+     
+
         public async Task Disconnect(string userName)
         {
             Console.BackgroundColor = ConsoleColor.Green;
@@ -155,6 +157,19 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             }
         }
 
+        public async Task GetChatMessages(int chatId, string userName, int skip)
+        {
+            if (skip < 0) await Clients.Client(Context.ConnectionId).SendAsync("RecieveChatMessages", new List<MessageGetDto>());
+            try
+            {
+                ICollection<MessageGetDto> messages = await _chatService.GetMessagesAsync(chatId, userName, skip);
+                await Clients.Client(Context.ConnectionId).SendAsync("RecieveChatMessages", messages);
+            }
+            catch (BaseException ex)
+            {
+                await Clients.Client(Context.ConnectionId).SendAsync("SendMessageError", ex.Message);
+            }
+        }
         public async Task SearchChatUsers(string searchParam, string userName)
         {
             try

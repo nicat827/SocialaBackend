@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
@@ -25,7 +26,24 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<IEnumerable<NotificationsGetDto>> GetLastNotifications(string userName)
         {
             IEnumerable<Notification> notificatons = await _repository.OrderAndGet(n => n.Id, true, n => n.AppUser.UserName == userName, limit: 10,includes:"AppUser").ToListAsync();
-            return _mapper.Map<IEnumerable<NotificationsGetDto>>(notificatons);
+
+            ICollection<NotificationsGetDto> dto = new List<NotificationsGetDto>();
+            foreach (Notification notification in  notificatons)
+            {
+                dto.Add(new NotificationsGetDto
+                {
+                    Id = notification.Id,
+                    CreatedAt = notification.CreatedAt,
+                    Text = notification.Text,
+                    Title = notification.Title,
+                    IsChecked = notification.IsChecked,
+                    UserName = notification.UserName,
+                    SrcId = notification.SrcId,
+                    Type = notification.Type.ToString(),
+                    SourceUrl = notification.SourceUrl
+                });
+            }
+            return dto;
         }
 
     }

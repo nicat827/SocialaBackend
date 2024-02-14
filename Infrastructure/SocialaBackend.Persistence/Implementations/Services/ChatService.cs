@@ -50,6 +50,36 @@ namespace SocialaBackend.Persistence.Implementations.Services
             };
         }
 
+        public async Task<ICollection<MessageGetDto>> GetMessagesAsync(int chatId,string userName, int skip)
+        {
+            Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser" });
+            if (chat is null || chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
+                throw new DontHavePermissionException("You cant get this chat!");
+            ICollection<MessageGetDto> messagesDto = new List<MessageGetDto>();
+
+            foreach (Message message in chat.Messages) messagesDto.Add(new MessageGetDto { 
+                Id = message.Id,
+                CreatedAt = message.CreatedAt,
+                Sender = message.SendedBy,
+                Text = message.Text,
+                IsChecked = message.IsChecked });
+            return messagesDto;
+        }
+
+
+        public async Task<int> GetNewMessagesCountAsync(string userName)
+        {
+            ICollection<Chat> chats = await _chatRepository.GetCollection(c => c.FirstUser.UserName == userName 
+            || c.SecondUser.UserName == userName,includes:new[] { "FirstUser", "SecondUser", "Messages" });
+            int count = 0;
+            foreach (Chat chat in chats)
+            {
+                count += chat.Messages.Where(m => m.IsChecked == false && m.SendedBy != userName).Count();
+            }
+            return count;
+                
+        }
+
         public async Task<ICollection<ChatItemSearchGetDto>> SearchChatUsersAsync(string searchParam, string currentUsername)
         {
             AppUser? currentUser = await _userManager.Users
@@ -86,7 +116,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     UserName = follower.UserName
                 });
             }
-            foreach (FollowItem follow in filteredFollows)
+            foreach (FollowItem follow in filteredFollows.Where(f => !filteredFollowers.Any(fi => fi.UserName == f.UserName)))
             {
                 Chat? chat = await _chatRepository.Get(
                     c => c.FirstUser.UserName == currentUsername && c.SecondUser.UserName == follow.UserName ||
@@ -124,6 +154,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _messageRepository.SaveChangesAsync();
             return new MessageGetDto { CreatedAt = message.CreatedAt, Id = message.Id, Text = message.Text, Sender = message.SendedBy };
         }
+
 
         public async Task<(MessageGetDto, ChatGetDto)> SendMessageFromProfileAsync(MessagePostDtoFromProfile dto)
         {

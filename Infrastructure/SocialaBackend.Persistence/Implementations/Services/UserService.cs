@@ -77,14 +77,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Title = "Follow Confirmed!",
                 Text = $"{user.UserName} accepted your follow",
                 SourceUrl = user.ImageUrl,
+                Type = NotificationType.Custom,
+                UserName = user.UserName
+                
                 
             };
             NotificationsGetDto notificationDto = new()
             {
+                UserName = newNotification.UserName,
                 Title = newNotification.Title,
                 Text = newNotification.Text,
                 SourceUrl = newNotification.SourceUrl,
-                CreatedAt = DateTime.Now
+                IsChecked = false,
+                CreatedAt = DateTime.Now,
+                Type = newNotification.Type.ToString()
             };
             await _hubContext.Clients.Group(follower.UserName).SendAsync("NewNotification", notificationDto);
             await _notificationRepository.CreateAsync(newNotification);
@@ -164,14 +170,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 AppUser = user,
                 Title = "New Follow!",
                 Text = user.IsPrivate ? $"{follower.UserName} sent to you follow request" : $"{follower.UserName} followed to you",
-                SourceUrl = user.ImageUrl
+                SourceUrl = follower.ImageUrl,
+                Type = NotificationType.Custom,
+                UserName = follower.UserName
             };
             NotificationsGetDto notificationDto = new()
             {
+                UserName = newNotification.UserName,
                 Title = newNotification.Title,
+                IsChecked = false,
                 Text = newNotification.Text,
                 SourceUrl = newNotification.SourceUrl,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                Type = newNotification.Type.ToString()      
+
             };
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
             await _notificationRepository.CreateAsync(newNotification);       
@@ -239,6 +251,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             return _mapper.Map<ICollection<FollowGetDto>>(user.Followers);
         }
+
+       
 
         public async Task<ICollection<FollowGetDto>> GetFollowsAsync(string username, int? skip)
         {
@@ -369,9 +383,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 Title = "Account confirmed!",
                 Text = $"Thank you! You succesfully confirmed {dto.Email}",
-                AppUser = user
+                AppUser = user,
+                Type = NotificationType.Email,
+                UserName = user.UserName
             };
-            NotificationsGetDto notify  = new() { CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title};
+            NotificationsGetDto notify  = new() { IsChecked = false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title, Type = newNotification.Type.ToString()};
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
@@ -417,10 +433,13 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 Title = "Password Changed!",
                 Text = $"You succesfully changed your password!",
-                AppUser = user
+                AppUser = user,
+                Type = NotificationType.System,
+                UserName = user.UserName,
+                
             };
-            NotificationsGetDto notify = new() { CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title };
-            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
+            NotificationsGetDto notify = new() {IsChecked=false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title,Type = newNotification.Type.ToString() };
+            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);    
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
 

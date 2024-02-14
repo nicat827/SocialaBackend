@@ -1,5 +1,6 @@
 ﻿using SocialaBackend.Domain.Entities.Base;
 using SocialaBackend.Domain.Entities.User;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,9 @@ namespace SocialaBackend.Domain.Entities
         public string? SourceUrl { get; set; }
         public string AppUserId { get; set; } = null!;
         public AppUser AppUser { get; set; } = null!;
+        public NotificationType Type { get; set; }
+        public bool IsChecked { get; set; }
+        public string UserName { get; set; } = null!;
+        public int? SrcId { get; set; }
     }
 }

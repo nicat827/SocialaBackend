@@ -74,7 +74,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<SettingsNotifyGetDto> GetNotifySettingsAsync()
         {
             AppUser user = await _getUser();
-            return new SettingsNotifyGetDto { PhotoLikeNotify = user.PhotoLikeNotify, FollowerNotify = user.FollowerNotify, PostLikeNotify = user.PostLikeNotify };
+            return new SettingsNotifyGetDto { PhotoLikeNotify = user.PhotoLikeNotify, PostCommentNotify=user.PostCommentNotify, FollowerNotify = user.FollowerNotify, PostLikeNotify = user.PostLikeNotify };
         }
 
         public async Task<string?> PostDescriptionAsync(SettingsDescriptionPutDto dto)
@@ -150,6 +150,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             user.FollowerNotify = dto.FollowerNotify;
             user.PhotoLikeNotify = dto.PhotoLikeNotify;
             user.PostLikeNotify = dto.PostLikeNotify;
+            user.PostCommentNotify = dto.PostCommentNotify;
             string? img = null;
             if (dto.Photo is not null) img = await _createAvatar(dto.Photo, user);
             await _userManager.UpdateAsync(user);
@@ -182,10 +183,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         {
                             AppUser = user,
                             Title = "Avatar Liked!",
-                            Text = $"User {_currentUsername} liked your avatar",
-                            SourceUrl = user.ImageUrl
+                            Text = $"User {currentUser.UserName} liked your avatar",
+                            SourceUrl = currentUser.ImageUrl,
+                            Type = NotificationType.Custom,
+                            UserName = currentUser.UserName,
                         };
-                        NotificationsGetDto dto = new() { Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now };
+                        NotificationsGetDto dto = new() { IsChecked = false, UserName = newNotification.UserName, Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
                         await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
                         await _notificationRepository.CreateAsync(newNotification);
                        
@@ -202,6 +205,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
             user.Bio = bio;
             await _userManager.UpdateAsync(user);
             return bio;
+
+        }
+
+        public async Task CheckNotificationsAsync(ICollection<int> notificationsIds)
+        {
+            foreach (int id in notificationsIds)
+            {
+                Notification notification = await _notificationRepository.GetByIdAsync(id, true);
+                notification.IsChecked = true;
+                await _notificationRepository.SaveChangesAsync();
+            }
 
         }
 

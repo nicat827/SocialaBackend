@@ -11,6 +11,7 @@ namespace SocialaBackend.Application.Dtos
     {
         public bool PhotoLikeNotify { get; set; }
         public bool PostLikeNotify { get; set; } 
+        public bool PostCommentNotify { get; set; } 
         public bool FollowerNotify { get; set; }
         public IFormFile? Photo { get; set; }
     }

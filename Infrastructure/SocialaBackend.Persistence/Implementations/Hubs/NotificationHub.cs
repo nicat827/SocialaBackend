@@ -3,6 +3,7 @@ using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Domain.Entities;
+using SocialaBackend.Persistence.Implementations.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,11 +14,13 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 {
     public class NotificationHub : Hub
     {
+        private readonly IChatService _chatService;
         private readonly INotificationService _service;
         private  static IList<string> ConnectedUsers = new List<string>();
         private  static Dictionary<string, int> GroupCount = new Dictionary<string, int>();
-        public NotificationHub(INotificationService service)
+        public NotificationHub(IChatService chatService, INotificationService service)
         {
+            _chatService = chatService;
             _service = service;
         }
         public async Task Connect(string userName)
@@ -37,10 +40,11 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 await Clients.Client(connectionId).SendAsync("OnlineUsers", ConnectedUsers);
 
             }
-
-
             IEnumerable<NotificationsGetDto> notifications = await _service.GetLastNotifications(userName);
             await Clients.Client(connectionId).SendAsync("LatestNotifications", notifications);
+          
+            //int count = await _chatService.GetNewMessagesCountAsync(userName);
+            //await Clients.Client(connectionId).SendAsync("GetNewMessagesCountRes", count);
         }
    
         public async Task Disconnect(string userName)

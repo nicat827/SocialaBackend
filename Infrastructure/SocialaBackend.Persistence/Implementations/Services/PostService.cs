@@ -65,7 +65,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException("User wasnt found!");
-            Post post = await _postRepository.GetByIdAsync(dto.Id,true, includes:new[] { "Comments", "AppUser", "AppUser.Followers" });
+            Post post = await _postRepository.GetByIdAsync(dto.Id,true, includes:new[] {"AppUser", "AppUser.Followers" });
             if (post is null) throw new NotFoundException("Post didnt found!");
             AppUser owner = post.AppUser;
 
@@ -79,7 +79,22 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = dto.Text,
                 AuthorId = user.Id,
             };
-
+            if (user.PostCommentNotify && user.UserName != post.AppUser.UserName)
+            {
+                Notification newNotification = new Notification
+                {
+                    AppUser = user,
+                    Title = "Post Commented!",
+                    Text = $"{user.UserName} commented your post!",
+                    SourceUrl = user.ImageUrl,
+                    Type = NotificationType.Custom,
+                    SrcId = post.Id,
+                    UserName = user.UserName,
+                };
+                NotificationsGetDto notificationDto = new() { IsChecked = false, SrcId = newNotification.SrcId, UserName = newNotification.UserName, SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
+                await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification", notificationDto);
+                await _notificationRepository.CreateAsync(newNotification);
+            }
             post.Comments.Add(newComment);
             post.CommentsCount++;
             await _postRepository.SaveChangesAsync();
@@ -289,7 +304,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task LikePostAsync(int id)
         {
-            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] { "Likes", "Likes.LikedUser", "AppUser", "AppUser.Followers" });
+            Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] {"Likes", "Likes.LikedUser", "AppUser", "AppUser.Followers" });
            
             if (post is null) throw new NotFoundException("Post didnt found!");
             if (post.AppUser.IsPrivate)
@@ -311,9 +326,13 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         AppUser = post.AppUser,
                         Title = "Post Liked!",
                         Text = $"{user.UserName} liked your post!",
-                        SourceUrl = post.Items.FirstOrDefault(i => i.Type == FileType.Image)?.SourceUrl
+                        SourceUrl = user.ImageUrl,
+                        Type = NotificationType.Custom,
+                        SrcId = post.Id,
+                        UserName = user.UserName,
+                        
                     };
-                    NotificationsGetDto dto = new() { SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now};
+                    NotificationsGetDto dto = new() { IsChecked = false, SrcId = newNotification.SrcId, UserName = newNotification.UserName, SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString()};
                     await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification",  dto);
                     await _notificationRepository.CreateAsync(newNotification);
                 }
