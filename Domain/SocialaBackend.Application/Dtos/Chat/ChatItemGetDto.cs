@@ -16,6 +16,9 @@ namespace SocialaBackend.Application.Dtos
         public DateTime? LastMessageSendedAt { get; set; }
         public string LastMessageSendedBy { get; set; } = null!;
 
+        public int UnreadedMessagesCount { get; set; }
+        
+
 
     }
 }

@@ -16,6 +16,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             int? limit = null,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes);
 
         IQueryable<T> OrderAndGet(
@@ -26,6 +27,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             int? limit = null,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes);
 
         IQueryable<T> SearchAndGet(
@@ -34,6 +36,7 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             int? limit = null,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes);
         Task<int> GetCountAsync(
             Expression<Func<T, bool>>? expression = null,
@@ -51,7 +54,14 @@ namespace SocialaBackend.Application.Abstractions.Repositories.Generic
             bool iqnoreQuery = false,
             params string[] includes);
 
-        Task<ICollection<T>> GetCollection(Expression<Func<T, bool>> expression, int skip=0, int take=10, bool isTracking = false, bool iqnoreQuery = false, params string[] includes);
+        Task<ICollection<T>> GetCollection(
+            Expression<Func<T, bool>> expression,
+            int skip=0,
+            int take=10,
+            bool isTracking = false,
+            bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
+            params string[] includes);
         void Update(T entity);
         void Delete(T entity);
         void SoftDelete(T entity);

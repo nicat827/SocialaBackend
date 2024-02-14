@@ -216,13 +216,16 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName)
         {
-            ICollection<Chat> userChats = await _chatRepository.GetCollection(
-                c => c.FirstUser.UserName == userName
+            ICollection<Chat> userChats = await _chatRepository.OrderAndGet(
+                order: c => c.LastMessageSendedAt,
+                isDescending: true,
+                expression: c => c.FirstUser.UserName == userName
                 || c.SecondUser.UserName == userName,
-                includes: new[] { "FirstUser", "SecondUser" });
-            var orderedChats = userChats.OrderByDescending(c => c.LastMessageSendedAt);
+                expressionIncludes: c => c.Messages.Where(m => !m.IsChecked && m.SendedBy != userName),
+                includes: new[] { "FirstUser", "SecondUser" }).ToListAsync();
+
             ICollection<ChatItemGetDto> dto = new List<ChatItemGetDto>();
-            foreach (Chat chat in orderedChats)
+            foreach (Chat chat in userChats)
             {
                 if (chat.FirstUser.UserName == userName)
                 {
@@ -232,6 +235,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         ChatPartnerUserName = chat.SecondUser.UserName,
                         ChatPartnerImageUrl = chat.SecondUser.ImageUrl,
                         LastMessage = chat.LastMessage,
+                        UnreadedMessagesCount = chat.Messages.Count,
                         LastMessageIsChecked = chat.LastMessageIsChecked,
                         LastMessageSendedAt = chat.LastMessageSendedAt,
                         LastMessageSendedBy = chat.LastMessageSendedBy
@@ -245,6 +249,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         ChatPartnerUserName = chat.FirstUser.UserName,
                         ChatPartnerImageUrl = chat.FirstUser.ImageUrl,
                         LastMessage = chat.LastMessage,
+                        UnreadedMessagesCount = chat.Messages.Count,
                         LastMessageIsChecked = chat.LastMessageIsChecked,
                         LastMessageSendedAt = chat.LastMessageSendedAt,
                         LastMessageSendedBy = chat.LastMessageSendedBy

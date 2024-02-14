@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using SocialaBackend.Application.Abstractions.Repositories.Generic;
 using SocialaBackend.Domain.Entities;
@@ -32,6 +33,7 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             int? limit = null,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes)
         {
             IQueryable<T> query = _table;
@@ -39,7 +41,10 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
 
             if (skip != null) query = query.Skip((int)skip);
             if (limit != null) query = query.Take((int)limit);
-
+            if (expressionIncludes is not null)
+            {
+                query = query.Include(expressionIncludes);
+            }
             if (includes != null) query = _takeIncludes(query, includes);
 
             return isTracking ? query : query.AsNoTracking();
@@ -50,10 +55,15 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             int? limit = null,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
+            if (expressionIncludes is not null)
+            {
+                query = query.Include(expressionIncludes);
+            }
             query = query.Where(expression);
             if (skip != null) query = query.Skip((int)skip);
             if (limit != null) query = query.Take((int)limit);
@@ -72,10 +82,15 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             int? limit = null,
             bool isTracking = false,
             bool iqnoreQuery = false,
+            Expression<Func<T, object>>? expressionIncludes = null,
             params string[] includes)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
+            if (expressionIncludes is not null)
+            {
+                query = query.Include(expressionIncludes);
+            }
             if (includes != null) query = _takeIncludes(query, includes);
             if (expression is not null) query = query.Where(expression);
             if (!isDescending) query = query.OrderBy(order);
@@ -99,8 +114,6 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
             if (includeExpression is not null)
             {
                 query = query.Include(includeExpression);
-               
-
             }
             if (includes != null)
             {
@@ -118,10 +131,14 @@ namespace SocialaBackend.Persistence.Implementations.Repositories.Generic
 
             return isTracking ? await query.FirstOrDefaultAsync() : await query.AsNoTracking().FirstOrDefaultAsync();
         }
-        public async Task<ICollection<T>> GetCollection(Expression<Func<T, bool>> expression,int skip = 0, int take = 10, bool isTracking = false, bool iqnoreQuery = false, params string[] includes)
+        public async Task<ICollection<T>> GetCollection(Expression<Func<T, bool>> expression,int skip = 0, int take = 10, bool isTracking = false, bool iqnoreQuery = false, Expression<Func<T, object>>? expressionIncludes = null, params string[] includes)
         {
             IQueryable<T> query = _table;
             if (iqnoreQuery) query = query.IgnoreQueryFilters();
+            if (expressionIncludes is not null)
+            {
+                query = query.Include(expressionIncludes);
+            }
             query = query.Where(expression);
             if (skip> 0) query = query.Skip(skip);
             if (take > 0) query = query.Take(take);
