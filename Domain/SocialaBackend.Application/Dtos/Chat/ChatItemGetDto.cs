@@ -10,6 +10,8 @@ namespace SocialaBackend.Application.Dtos
     {
         public int ChatId { get; set; }
         public string ChatPartnerUserName { get; set; } = null!;
+        public string ChatPartnerName { get; set; } = null!;
+        public string ChatPartnerSurname { get; set; } = null!;
         public string? ChatPartnerImageUrl { get; set; }
         public string? LastMessage { get; set; }
         public bool LastMessageIsChecked { get; set; }

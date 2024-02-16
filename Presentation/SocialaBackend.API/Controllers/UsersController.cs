@@ -66,6 +66,13 @@ namespace SocialaBackend.API.Controllers
         }
 
         [Authorize]
+        [HttpGet("/users/search")]
+        public async Task<IActionResult> SearchUsers(string searchTerm)
+        {
+            return Ok(await _service.SearchUsersAsync(searchTerm));
+        }
+
+        [Authorize]
         [HttpGet("users/{username}")]
         public async Task<IActionResult> Get(string username)
         {

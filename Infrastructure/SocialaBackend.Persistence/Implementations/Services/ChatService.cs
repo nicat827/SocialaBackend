@@ -44,6 +44,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return new ChatGetDto
             {
                 Id = chat.Id,
+                ChatPartnerName = firstUser.UserName == userName ? chat.SecondUser.Name : chat.FirstUser.Name,
+                ChatPartnerSurname = firstUser.UserName == userName ? chat.SecondUser.Surname : chat.FirstUser.Surname,
                 ChatPartnerImageUrl = firstUser.UserName == userName ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
                 ChatPartnerUserName = firstUser.UserName == userName ? chat.SecondUser.UserName : chat.FirstUser.UserName,
                 Messages = messagesDto,
@@ -206,6 +208,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 ChatPartnerImageUrl = firstUser.UserName == dto.Sender ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
                 ChatPartnerUserName = firstUser.UserName == dto.Sender ? chat.SecondUser.UserName : chat.FirstUser.UserName,
+                ChatPartnerName = firstUser.UserName == dto.Sender ? chat.SecondUser.Name : chat.FirstUser.Name,
+                ChatPartnerSurname = firstUser.UserName == dto.Sender ? chat.SecondUser.Surname : chat.FirstUser.Surname,
                 Messages = new List<MessageGetDto>(),
                 ConnectionId = chat.ConnectionId,
                 Id = chat.Id,
@@ -235,6 +239,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     {
                         ChatId = chat.Id,
                         ChatPartnerUserName = chat.SecondUser.UserName,
+                        ChatPartnerName = chat.SecondUser.Name,
+                        ChatPartnerSurname =chat.SecondUser.Surname,
                         ChatPartnerImageUrl = chat.SecondUser.ImageUrl,
                         LastMessage = chat.LastMessage,
                         UnreadedMessagesCount = chat.Messages.Count,
@@ -249,6 +255,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     {
                         ChatId = chat.Id,
                         ChatPartnerUserName = chat.FirstUser.UserName,
+                        ChatPartnerName = chat.FirstUser.Name,
+                        ChatPartnerSurname = chat.FirstUser.Surname,
                         ChatPartnerImageUrl = chat.FirstUser.ImageUrl,
                         LastMessage = chat.LastMessage,
                         UnreadedMessagesCount = chat.Messages.Count,

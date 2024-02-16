@@ -18,6 +18,7 @@ using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using SocialaBackend.Persistence.Common;
 using SocialaBackend.Persistence.Implementations.Hubs;
+using SocialaBackend.Persistence.Implementations.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class UserService : IUserService
     {
+        private readonly IChatRepository _chatRepository;
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly INotificationRepository _notificationRepository;
         private readonly IEmailService _emailService;
@@ -42,9 +44,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly string _currentUserName;
 
         public UserService(
+            IChatRepository chatRepository,
             IHubContext<NotificationHub> hubContext,
             INotificationRepository notificationRepository, IEmailService emailService, IHttpContextAccessor http, ICloudinaryService cloudinaryService, IFileService fileService, UserManager<AppUser> userManager, IMapper mapper, ITokenService tokenService, SignInManager<AppUser> signInManager)
         {
+            _chatRepository = chatRepository;
             _hubContext = hubContext;
             _notificationRepository = notificationRepository;
             _emailService = emailService;
@@ -136,6 +140,29 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             currentUser.Follows.Remove(item);
             await _userManager.UpdateAsync(currentUser);
+        }
+
+        public async Task<ICollection<ChatItemSearchGetDto>> SearchUsersAsync(string searchParam)
+        {
+            ICollection<AppUser> users = await _userManager.Users.Where(u => u.UserName != _currentUserName && u.UserName.Contains(searchParam)
+            || u.Name.ToLower().Contains(searchParam.ToLower()) || u.Surname.ToLower().Contains(searchParam.ToLower())).ToListAsync();
+            ICollection<ChatItemSearchGetDto> dto = new List<ChatItemSearchGetDto>();
+            foreach (AppUser user in users)
+            {
+
+                Chat? chat = await _chatRepository.Get(
+                    c => c.FirstUser.UserName == _currentUserName && c.SecondUser.UserName == user.UserName ||
+                    c.FirstUser.UserName == user.UserName && c.SecondUser.UserName == _currentUserName);
+                dto.Add(new ChatItemSearchGetDto
+                {
+                    ChatId = chat is null ? null : chat.Id,
+                    ImageUrl = user.ImageUrl,
+                    Name = user.Name,
+                    Surname = user.Surname,
+                    UserName = user.UserName
+                });
+            }
+            return dto;
         }
         public async Task<FollowGetDto> FollowAsync(string followToUsername)
         {
