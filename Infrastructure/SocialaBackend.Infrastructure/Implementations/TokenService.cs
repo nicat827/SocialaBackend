@@ -26,7 +26,7 @@ namespace SocialaBackend.Infrastructure.Implementations
             _userManager = userManager;
             _configuration = configuration;
         }
-        public async Task<TokenResponseDto> GenerateTokensAsync(AppUser user, int minutes)
+        public async Task<TokenResponseDto> GenerateTokensAsync(AppUser user, bool isPersistence)
         {
             ICollection<Claim> claims = new List<Claim>
             {
@@ -50,7 +50,7 @@ namespace SocialaBackend.Infrastructure.Implementations
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 notBefore: DateTime.UtcNow,
-                expires: DateTime.UtcNow.AddMinutes(minutes),
+                expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: signingCredentials
 
             );
@@ -62,7 +62,7 @@ namespace SocialaBackend.Infrastructure.Implementations
                 accessToken,
                 token.ValidTo,
                 refreshToken,
-                token.ValidTo.AddMinutes(minutes)
+                isPersistence ? token.ValidTo.AddDays(7) : token.ValidFrom.AddMinutes(30) 
             );
         }
     }

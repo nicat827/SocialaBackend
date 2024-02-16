@@ -10,6 +10,6 @@ namespace SocialaBackend.Application.Abstractions.Services
 {
     public interface ITokenService
     {
-        Task<TokenResponseDto> GenerateTokensAsync(AppUser user, int minutes);
+        Task<TokenResponseDto> GenerateTokensAsync(AppUser user, bool isPersistence);
     }
 }

@@ -290,8 +290,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             if (!res.Succeeded) throw new WrongPasswordException("Username, email or password is incorrect!");
 
-            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
+            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, dto.IsPersistence);
             user.RefreshToken = tokens.RefreshToken;
+            user.IsPersistence = dto.IsPersistence;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(user);
             return new AppUserLoginResponseDto(user.UserName, tokens.AccessToken, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
@@ -307,6 +308,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 user.RefreshToken = null;
                 user.RefreshTokenExpiresAt = null;
+                user.IsPersistence = null;
                 await _userManager.UpdateAsync(user);
             }
             
@@ -317,7 +319,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken
                                                                         && u.RefreshTokenExpiresAt > DateTime.UtcNow);
             if (user is null) throw new InvalidTokenException("Token is not valid!");
-            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
+            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, (bool)user.IsPersistence);
             user.RefreshToken = tokens.RefreshToken;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(user);
@@ -391,7 +393,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
-            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, 15);
+            TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, false);
             user.RefreshToken = tokens.RefreshToken;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
             await _userManager.UpdateAsync(user);

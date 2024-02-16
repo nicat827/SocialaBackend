@@ -52,9 +52,6 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
         public async Task DisconnectChat(int chatId, string userName)
         {
-            Console.BackgroundColor = ConsoleColor.Green;
-            Console.WriteLine("WORKINGGGGGG");
-            Console.ResetColor();
             try
             {
                 ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId, userName);
@@ -91,10 +88,12 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
                 }
             }
+            int count = 0;
             foreach (MessageGetDto message in chat.Messages)
             {
                 if (message.IsChecked == false && message.Sender != userName)
                 {
+                    count++;
                     message.IsChecked = true;
                     
                     Message messFromDb = await _messageRepository.GetByIdAsync(message.Id, true);
@@ -102,7 +101,19 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                     await _messageRepository.SaveChangesAsync();
                 }
             }
-            
+            if (count > 19)
+            {
+                ICollection<Message> allUnreadedMessages = await _messageRepository.GetAllUnreadedMessagesAsync(chatId);
+                foreach (Message mess in allUnreadedMessages)
+                {
+                    if (mess.SendedBy != userName) 
+                    {
+                        mess.IsChecked = true;
+                        await _messageRepository.SaveChangesAsync();
+                    }
+                }
+
+            }
             ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(userName);
             ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(chat.ChatPartnerUserName);
 

@@ -10,5 +10,6 @@ namespace SocialaBackend.Application.Abstractions.Repositories
 {
     public interface IMessageRepository:IGenericRepository<Message>
     {
+        Task<ICollection<Message>> GetAllUnreadedMessagesAsync(int chatId);
     }
 }

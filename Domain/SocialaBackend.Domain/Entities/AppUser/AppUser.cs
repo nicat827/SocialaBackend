@@ -18,6 +18,7 @@ namespace SocialaBackend.Domain.Entities.User
         public string? ImageUrl { get; set; }
         public string? Bio { get; set; }
 
+        public bool? IsPersistence { get; set; } 
         public Gender Gender { get; set; }
 
         public bool IsPrivate { get; set; }

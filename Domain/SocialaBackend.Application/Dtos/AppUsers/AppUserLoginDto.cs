@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos.AppUsers
 {
-    public record AppUserLoginDto(string UsernameOrEmail, string Password);
+    public record AppUserLoginDto(string UsernameOrEmail, string Password, bool IsPersistence);
 
 }

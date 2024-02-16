@@ -43,6 +43,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             foreach (Message message in  chat.Messages) messagesDto.Add(new MessageGetDto {Id=message.Id, CreatedAt = message.CreatedAt, Sender = message.SendedBy, Text = message.Text, IsChecked = message.IsChecked}); 
             return new ChatGetDto
             {
+                Id = chat.Id,
                 ChatPartnerImageUrl = firstUser.UserName == userName ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
                 ChatPartnerUserName = firstUser.UserName == userName ? chat.SecondUser.UserName : chat.FirstUser.UserName,
                 Messages = messagesDto,
@@ -137,7 +138,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
         {
-            Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId, includes:new[] { "FirstUser", "SecondUser" });
+            Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId,true, includes:new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {dto.ChatId} doesnt exists!");
             if (chat.FirstUser.UserName != dto.Sender && chat.SecondUser.UserName != dto.Sender)
                 throw new DontHavePermissionException("You cant write message to this chat!");
@@ -150,6 +151,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             chat.LastMessage = dto.Text;
             chat.LastMessageSendedAt = DateTime.Now;
             chat.LastMessageSendedBy = dto.Sender;
+            chat.LastMessageIsChecked = false;
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
             return new MessageGetDto { CreatedAt = message.CreatedAt, Id = message.Id, Text = message.Text, Sender = message.SendedBy };
