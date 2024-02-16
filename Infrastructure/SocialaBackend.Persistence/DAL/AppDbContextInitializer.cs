@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using SocialaBackend.Persistence.DAL;
@@ -51,25 +52,35 @@ namespace ProniaOnion.Persistence.DAL
         }
         public async Task CreateAdminAsync()
         {
-            AppUser user = new AppUser
+            if (!await _userManager.Users.AnyAsync(u => u.UserName == _configuration["AdminSettings:UserName"]))
             {
-                Name = "admin",
-                Surname = "admin",
-                UserName = _configuration["AdminSettings:UserName"],
-            };
-            var res  = await _userManager.CreateAsync(user, _configuration["AdminSettings:Password"]);
-            if (!res.Succeeded)
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (var err in res.Errors)
+                AppUser user = new AppUser
                 {
-                    sb.AppendLine(err.ToString());
+                    Name = "Super",
+                    Surname = "Admin",
+                    UserName = _configuration["AdminSettings:UserName"],
+                    Email = _configuration["AdminSettings:Email"],
+                    EmailConfirmed = true
+               
+                };
+                var res  = await _userManager.CreateAsync(user, _configuration["AdminSettings:Password"]);
+                if (!res.Succeeded)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var err in res.Errors)
+                    {
+                        sb.AppendLine(err.ToString());
+                    }
+                    Console.WriteLine(sb.ToString());
                 }
-                Console.WriteLine(sb.ToString());
-            }
-            else
-            {
-                await _userManager.AddToRoleAsync(user, UserRole.Admin.ToString());
+                else
+                {
+                    await _userManager.AddToRoleAsync(user, UserRole.Admin.ToString());
+                    Story story = new Story { Owner = user };
+                    await _context.Stories.AddAsync(story);
+                    await _context.SaveChangesAsync();
+
+                }
 
             }
         }

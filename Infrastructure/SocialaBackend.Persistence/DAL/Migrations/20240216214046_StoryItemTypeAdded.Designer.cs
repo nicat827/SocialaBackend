@@ -12,8 +12,8 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240210172340_StoryTableUpdatedAddedColumnLastUpdatedAt")]
-    partial class StoryTableUpdatedAddedColumnLastUpdatedAt
+    [Migration("20240216214046_StoryItemTypeAdded")]
+    partial class StoryItemTypeAdded
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -186,6 +186,54 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.ToTable("AvatarLikeItems");
                 });
 
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.Chat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FirstUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("LastMessageIsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastMessageSendedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastMessageSendedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SecondUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FirstUserId");
+
+                    b.HasIndex("SecondUserId");
+
+                    b.ToTable("Chats");
+                });
+
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Comment", b =>
                 {
                     b.Property<int>("Id")
@@ -340,6 +388,41 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.ToTable("FollowItem");
                 });
 
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SendedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Notification", b =>
                 {
                     b.Property<int>("Id")
@@ -355,17 +438,30 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsChecked")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("SourceUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SrcId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -560,7 +656,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.HasIndex("OwnerId")
                         .IsUnique();
 
-                    b.ToTable("Story");
+                    b.ToTable("Stories");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.StoryItem", b =>
@@ -586,6 +682,9 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<string>("Text")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.Property<int>("WatchCount")
                         .HasColumnType("int");
 
@@ -593,7 +692,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasIndex("StoryId");
 
-                    b.ToTable("StoryItem");
+                    b.ToTable("StoryItems");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.StoryItemWatcher", b =>
@@ -622,7 +721,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasIndex("WatcherId");
 
-                    b.ToTable("StoryItemWatcher");
+                    b.ToTable("StoryItemWatchers");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>
@@ -668,6 +767,9 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<string>("InstagramLink")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool?>("IsPersistence")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("bit");
 
@@ -699,6 +801,9 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("PhotoLikeNotify")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PostCommentNotify")
                         .HasColumnType("bit");
 
                     b.Property<bool>("PostLikeNotify")
@@ -799,6 +904,25 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.Chat", b =>
+                {
+                    b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "FirstUser")
+                        .WithMany()
+                        .HasForeignKey("FirstUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "SecondUser")
+                        .WithMany("Chats")
+                        .HasForeignKey("SecondUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("FirstUser");
+
+                    b.Navigation("SecondUser");
+                });
+
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Comment", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "Author")
@@ -853,6 +977,17 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.Message", b =>
+                {
+                    b.HasOne("SocialaBackend.Domain.Entities.Chat", "Chat")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Notification", b =>
@@ -979,6 +1114,11 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("Watcher");
                 });
 
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.Chat", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Comment", b =>
                 {
                     b.Navigation("Likes");
@@ -1012,6 +1152,8 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>
                 {
+                    b.Navigation("Chats");
+
                     b.Navigation("Followers");
 
                     b.Navigation("Follows");

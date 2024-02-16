@@ -1,37 +1,36 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
-    public partial class EntitiesForStoryAddedOneToOneRelationForUserAndStoryCreated : Migration
+    public partial class StoriesTableAddDependenciesForStoriesTableCreated : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Story",
+                name: "Stories",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OwnerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Story", x => x.Id);
+                    table.PrimaryKey("PK_Stories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Story_AspNetUsers_AppUserId",
-                        column: x => x.AppUserId,
+                        name: "FK_Stories_AspNetUsers_OwnerId",
+                        column: x => x.OwnerId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "StoryItem",
+                name: "StoryItems",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -44,17 +43,17 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StoryItem", x => x.Id);
+                    table.PrimaryKey("PK_StoryItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StoryItem_Story_StoryId",
+                        name: "FK_StoryItems_Stories_StoryId",
                         column: x => x.StoryId,
-                        principalTable: "Story",
+                        principalTable: "Stories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "StoryItemWatcher",
+                name: "StoryItemWatchers",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -66,52 +65,52 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StoryItemWatcher", x => x.Id);
+                    table.PrimaryKey("PK_StoryItemWatchers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StoryItemWatcher_AspNetUsers_WatcherId",
+                        name: "FK_StoryItemWatchers_AspNetUsers_WatcherId",
                         column: x => x.WatcherId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_StoryItemWatcher_StoryItem_StoryItemId",
+                        name: "FK_StoryItemWatchers_StoryItems_StoryItemId",
                         column: x => x.StoryItemId,
-                        principalTable: "StoryItem",
+                        principalTable: "StoryItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Story_AppUserId",
-                table: "Story",
-                column: "AppUserId",
+                name: "IX_Stories_OwnerId",
+                table: "Stories",
+                column: "OwnerId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoryItem_StoryId",
-                table: "StoryItem",
+                name: "IX_StoryItems_StoryId",
+                table: "StoryItems",
                 column: "StoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoryItemWatcher_StoryItemId",
-                table: "StoryItemWatcher",
+                name: "IX_StoryItemWatchers_StoryItemId",
+                table: "StoryItemWatchers",
                 column: "StoryItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoryItemWatcher_WatcherId",
-                table: "StoryItemWatcher",
+                name: "IX_StoryItemWatchers_WatcherId",
+                table: "StoryItemWatchers",
                 column: "WatcherId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "StoryItemWatcher");
+                name: "StoryItemWatchers");
 
             migrationBuilder.DropTable(
-                name: "StoryItem");
+                name: "StoryItems");
 
             migrationBuilder.DropTable(
-                name: "Story");
+                name: "Stories");
         }
     }
 }

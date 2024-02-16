@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -11,7 +10,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
         {
             migrationBuilder.AddColumn<DateTime>(
                 name: "LastItemAddedAt",
-                table: "Story",
+                table: "Stories",
                 type: "datetime2",
                 nullable: true);
         }
@@ -20,7 +19,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "LastItemAddedAt",
-                table: "Story");
+                table: "Stories");
         }
     }
 }

@@ -654,7 +654,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.HasIndex("OwnerId")
                         .IsUnique();
 
-                    b.ToTable("Story");
+                    b.ToTable("Stories");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.StoryItem", b =>
@@ -690,7 +690,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasIndex("StoryId");
 
-                    b.ToTable("StoryItem");
+                    b.ToTable("StoryItems");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.StoryItemWatcher", b =>
@@ -719,7 +719,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasIndex("WatcherId");
 
-                    b.ToTable("StoryItemWatcher");
+                    b.ToTable("StoryItemWatchers");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>

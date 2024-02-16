@@ -17,6 +17,8 @@ namespace SocialaBackend.Application.Dtos
         public string? GithubLink { get; set; }
         public string? InstagramLink { get; set; }
         public Gender Gender { get; set; }
+        public IEnumerable<string> Roles { get; set; } = new List<string>();
+
         public string? ImageUrl { get; set; }
         public string? BackgroundImage { get; set; }
         public bool IsPrivate { get; set; }

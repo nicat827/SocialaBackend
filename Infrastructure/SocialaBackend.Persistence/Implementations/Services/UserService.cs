@@ -228,6 +228,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt defined!");
             AppUserGetDto dto = _mapper.Map<AppUserGetDto>(user);
+            dto.Roles = await _userManager.GetRolesAsync(user);
             dto.FollowersCount = user.Followers.Where(f => f.IsConfirmed == true).Count();
             dto.FollowsCount = user.Follows.Where(f => f.IsConfirmed == true).Count();
           
@@ -248,8 +249,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.LikedComments)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} wasnt defined!");
+            
             CurrentAppUserGetDto dto = _mapper.Map<CurrentAppUserGetDto>(user);
+            dto.Roles = await _userManager.GetRolesAsync(user);
             dto.LikedPostsIds= new List<int>();
+            
             foreach (Post post in user.LikedPosts.Select(l => l.Post)) dto.LikedPostsIds.Add(post.Id);
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();

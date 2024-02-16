@@ -22,6 +22,9 @@ namespace SocialaBackend.Persistence.DAL
         public DbSet<Reply> Replies { get; set; }
         public DbSet<Chat> Chats { get; set; }
 
+        public DbSet<Story> Stories { get; set; }
+        public DbSet<StoryItem> StoryItems { get; set; }
+        public DbSet<StoryItemWatcher> StoryItemWatchers { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<AvatarLikeItem> AvatarLikeItems { get; set; }

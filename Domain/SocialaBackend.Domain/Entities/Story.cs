@@ -12,7 +12,7 @@ namespace SocialaBackend.Domain.Entities
     {
         //ralational
 
-        public string OwnerId = null!;
+        public string OwnerId { get; set; } = null!;
         public AppUser Owner { get; set; } = null!;
 
         public DateTime? LastItemAddedAt { get; set; }

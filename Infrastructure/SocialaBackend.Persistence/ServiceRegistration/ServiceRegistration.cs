@@ -58,6 +58,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IChatService, ChatService>();
+            services.AddScoped<IManageService, ManageService>();
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<AppDbContextInitializer>();
         }

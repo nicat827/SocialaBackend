@@ -16,11 +16,14 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public int StoryId { get; set; }
         public string? Bio { get; set; }
 
+        
+
         public string? FacebookLink { get; set; }
         public string? GithubLink { get; set; }
         public string? InstagramLink { get; set; }
 
         public Gender Gender { get; set; }
+        public IEnumerable<string> Roles { get; set; } = new List<string>();
         public string? ImageUrl { get; set; }
         public bool IsPrivate { get; set; }
 

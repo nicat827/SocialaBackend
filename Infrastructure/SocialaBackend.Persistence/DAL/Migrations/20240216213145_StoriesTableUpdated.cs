@@ -4,23 +4,27 @@
 
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
-    public partial class StoryItemTypeAdded : Migration
+    public partial class StoriesTableUpdated : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "Type",
-                table: "StoryItem",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+           
+
+            migrationBuilder.AddColumn<string>(
+                name: "Text",
+                table: "StoryItems",
+                type: "nvarchar(max)",
+                nullable: true);
+
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+
             migrationBuilder.DropColumn(
-                name: "Type",
-                table: "StoryItem");
+                name: "Text",
+                table: "StoryItems");
+
         }
     }
 }
