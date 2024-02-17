@@ -162,41 +162,38 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user = await _userManager.Users.Where(u => u.UserName == username).FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {username} wasnt found!");
 
-            if (user.ImageUrl is not null)
+            AppUser? currentUser = await _userManager.Users
+                .Where(u => u.UserName == _currentUsername)
+                .Include(u => u.LikedAvatars)
+                .FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
+            AvatarLikeItem? likeItem = currentUser.LikedAvatars.FirstOrDefault(a => a.UserName == user.UserName);
+            if (likeItem is not null)
             {
-                AppUser? currentUser = await _userManager.Users
-                    .Where(u => u.UserName == _currentUsername)
-                    .Include(u => u.LikedAvatars)
-                    .FirstOrDefaultAsync();
-                if (currentUser is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
-                AvatarLikeItem? likeItem = currentUser.LikedAvatars.FirstOrDefault(a => a.UserName == user.UserName);
-                if (likeItem is not null)
-                {
-                    currentUser.LikedAvatars.Remove(likeItem);
-                }
-                else
-                {
-                    currentUser.LikedAvatars.Add(new AvatarLikeItem { AppUserId = user.Id, UserName = user.UserName });
-                    if (user.PhotoLikeNotify && user.UserName != _currentUsername)
-                    {
-                        Notification newNotification = new Notification
-                        {
-                            AppUser = user,
-                            Title = "Avatar Liked!",
-                            Text = $"User {currentUser.UserName} liked your avatar",
-                            SourceUrl = currentUser.ImageUrl,
-                            Type = NotificationType.Custom,
-                            UserName = currentUser.UserName,
-                        };
-                        NotificationsGetDto dto = new() { IsChecked = false, UserName = newNotification.UserName, Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
-                        await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
-                        await _notificationRepository.CreateAsync(newNotification);
-                       
-                    }
-                }
-                await _userManager.UpdateAsync(currentUser);
+                currentUser.LikedAvatars.Remove(likeItem);
             }
-            else throw new NotFoundException("Avatar didnt found");
+            else
+            {
+                currentUser.LikedAvatars.Add(new AvatarLikeItem { AppUserId = user.Id, UserName = user.UserName });
+                if (user.PhotoLikeNotify && user.UserName != _currentUsername)
+                {
+                    Notification newNotification = new Notification
+                    {
+                        AppUser = user,
+                        Title = "Avatar Liked!",
+                        Text = $"User {currentUser.UserName} liked your avatar",
+                        SourceUrl = currentUser.ImageUrl,
+                        Type = NotificationType.Custom,
+                        UserName = currentUser.UserName,
+                    };
+                    NotificationsGetDto dto = new() { IsChecked = false, UserName = newNotification.UserName, Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
+                    await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
+                    await _notificationRepository.CreateAsync(newNotification);
+                       
+                }
+            }
+            await _userManager.UpdateAsync(currentUser);
+            
         }
 
         public async Task<string?> ChangeBioAsync(string? bio)
