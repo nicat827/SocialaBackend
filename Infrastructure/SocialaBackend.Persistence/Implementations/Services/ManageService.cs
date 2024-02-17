@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
+using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Application.Exceptions.Roles;
 using SocialaBackend.Domain.Entities.User;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +19,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private string _currentUserName; 
+        private string _currentUserName;
 
         public ManageService(
             IHttpContextAccessor http,
@@ -31,7 +34,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             ICollection<AppUser> users = await _userManager.Users.Where(
                 u => u.UserName != _currentUserName &&
-                u.UserName.Contains(searchTerm) 
+                u.UserName.Contains(searchTerm)
                 || u.Name.ToLower().Contains(searchTerm.ToLower())
                 || u.Surname.ToLower().Contains(searchTerm.ToLower()))
                 .Skip(skip)
@@ -54,6 +57,46 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             return dto;
         }
+
+        public async Task AddToRoleUserAsync(string userName, UserRole role)
+        {
+            AppUser? user = await _userManager.FindByNameAsync(userName);
+            if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
+            if (await _userManager.IsInRoleAsync(user, role.ToString())) throw new AlreadyInRoleException($"User with username {userName} already in role!");
+            await _userManager.AddToRoleAsync(user, role.ToString());
+        }
+        public async Task AddToRolesUserAsync(string userName, IEnumerable<UserRole> userRoles)
+        {
+            AppUser? user = await _userManager.FindByNameAsync(userName);
+            if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
+            ICollection<string> roles = new List<string>();
+            foreach (UserRole userRole in userRoles)
+            {
+                if (!await _userManager.IsInRoleAsync(user, userRole.ToString())) roles.Add(userRole.ToString());
+
+            }
+            await _userManager.AddToRolesAsync(user, roles);
+        }
+        public async Task RemoveFromRoleUserAsync(string userName,UserRole role)
+        {
+            AppUser? user = await _userManager.FindByNameAsync(userName);
+            if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
+            if (!await _userManager.IsInRoleAsync(user, role.ToString())) throw new DontHasRoleException($"User with username {userName} hasnt this role!");
+            await _userManager.RemoveFromRoleAsync(user, role.ToString());
+        }
+        public async Task<ManageGetDto> GetManageAsync()
+        {
+            return new ManageGetDto
+            {
+                RegisteredUsersCountByGender = new StatOfRegisteredUsersDto
+                {
+                    MaleCount = await _userManager.Users.Where(u => u.Gender == Gender.Male).CountAsync(),
+                    FemaleCount = await _userManager.Users.Where(u => u.Gender == Gender.Female).CountAsync(),
+                    OtherCount = await _userManager.Users.Where(u => u.Gender == Gender.None).CountAsync(),
+                }
+            };
+        }
+
 
     }
 }

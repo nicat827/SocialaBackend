@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,6 +17,7 @@ namespace SocialaBackend.Application.Dtos
         public string Username { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
+        public Gender Gender { get; set; }
         public IFormFile? Photo { get; set; }
 
     }
