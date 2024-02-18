@@ -58,32 +58,21 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return dto;
         }
 
-        public async Task AddToRoleUserAsync(string userName, UserRole role)
+        public async Task ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles)
         {
             AppUser? user = await _userManager.FindByNameAsync(userName);
             if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
-            if (await _userManager.IsInRoleAsync(user, role.ToString())) throw new AlreadyInRoleException($"User with username {userName} already in role!");
-            await _userManager.AddToRoleAsync(user, role.ToString());
-        }
-        public async Task AddToRolesUserAsync(string userName, IEnumerable<UserRole> userRoles)
-        {
-            AppUser? user = await _userManager.FindByNameAsync(userName);
-            if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
-            ICollection<string> roles = new List<string>();
-            foreach (UserRole userRole in userRoles)
+            foreach (string role in await _userManager.GetRolesAsync(user))
             {
-                if (!await _userManager.IsInRoleAsync(user, userRole.ToString())) roles.Add(userRole.ToString());
-
+                if (!roles.Any(r => r.ToString() == role)) await _userManager.RemoveFromRoleAsync(user, role);
             }
-            await _userManager.AddToRolesAsync(user, roles);
+            foreach (UserRole role in roles)
+            {
+                if (!await _userManager.IsInRoleAsync(user, role.ToString())) await _userManager.AddToRoleAsync(user, role.ToString());
+            }
+          
         }
-        public async Task RemoveFromRoleUserAsync(string userName,UserRole role)
-        {
-            AppUser? user = await _userManager.FindByNameAsync(userName);
-            if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
-            if (!await _userManager.IsInRoleAsync(user, role.ToString())) throw new DontHasRoleException($"User with username {userName} hasnt this role!");
-            await _userManager.RemoveFromRoleAsync(user, role.ToString());
-        }
+  
         public async Task<ManageGetDto> GetManageAsync()
         {
             return new ManageGetDto

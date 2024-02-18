@@ -13,7 +13,7 @@ namespace SocialaBackend.Domain.Enums
     public enum UserRole
     {
         Member,
-        ConfirmedMember,
+        Verified,
         Moderator,
         Admin
     }

@@ -33,25 +33,11 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.SearchUsersAsync(searchTerm, skip));
         }
 
-        [HttpPost("role")]
+        [HttpPut("roles")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AddToRoleUser([FromForm]string userName, [FromForm] UserRole role)
+        public async Task<IActionResult> ChangeRoles([FromForm]string userName, [FromForm] IEnumerable<UserRole> roles)
         {
-            await _service.AddToRoleUserAsync(userName, role);
-            return NoContent();
-        }
-        [HttpPost("roles")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AddToRolesUser([FromForm] string userName, [FromForm] IEnumerable<UserRole> roles)
-        {
-            await _service.AddToRolesUserAsync(userName, roles);
-            return NoContent();
-        }
-        [HttpDelete("roles")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RemoveFromRole([FromForm] string userName, [FromForm] UserRole role)
-        {
-            await _service.RemoveFromRoleUserAsync(userName, role);
+            await _service.ChangeRolesUserAsync(userName, roles);
             return NoContent();
         }
 
