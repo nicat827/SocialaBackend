@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record PostGetDto(int Id, string? Description, DateTime CreatedAt, ICollection<PostItemGetDto> Items, ICollection<CommentGetDto> Comments, int CommentsCount, int LikesCount);
+    public record PostGetDto(int Id, string AppUserUserName,string AppUserName,string AppUserSurname,string AppUserImageUrl, string? Description, DateTime CreatedAt, ICollection<PostItemGetDto> Items, ICollection<CommentGetDto> Comments, int CommentsCount, int LikesCount);
 }

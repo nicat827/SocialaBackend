@@ -21,6 +21,8 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task LikeReplyAsync(int id);
         Task<IEnumerable<CommentGetDto>> GetCommentsAsync(int id, int? skip);
         Task RecoverPostAsync(int id);
+
+        Task<IEnumerable<PostGetDto>> GetFeedPostsAsync(int skip);
         Task<CommentGetDto> CommentAsync(CommentPostDto dto);
         Task DeletePostAsync(int id);
         Task<ReplyGetDto> ReplyCommentAsync(ReplyPostDto dto);

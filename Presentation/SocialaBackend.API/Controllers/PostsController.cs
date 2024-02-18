@@ -44,6 +44,11 @@ namespace SocialaBackend.API.Controllers
         {
             return Ok(await _service.GetPostsAsync(username));
         }
+        [HttpGet("feed/{skip}")]
+        public async Task<IActionResult> GetFeed(int skip)
+        {
+            return Ok(await _service.GetFeedPostsAsync(skip));
+        }
         [HttpPut("recover/{id}")]
         public async Task<IActionResult> Recover(int id)
         {

@@ -15,6 +15,7 @@ using SocialaBackend.Domain.Enums;
 using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -302,6 +303,35 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         }
 
+        public async Task<IEnumerable<PostGetDto>> GetFeedPostsAsync(int skip)
+        {
+            AppUser? user = await _userManager.Users
+             .Where(u => u.UserName == _currentUserName)
+                 .Include(u => u.Follows.Where(uf => uf.IsConfirmed == true))
+             .FirstOrDefaultAsync();
+            ICollection<PostGetDto> dto = new List<PostGetDto>();
+            foreach (FollowItem userFollow in user.Follows)
+            {
+                ICollection<Post> followPosts = await _postRepository.OrderAndGet(
+                    order: p => p.CreatedAt,
+                    isDescending: true,
+                    expression: p => p.AppUser.UserName == userFollow.UserName,
+                    skip: skip,
+                    limit: 10,
+                    expressionIncludes: p=> p.Comments.Take(5),
+                    includes:new[] { "AppUser", "Items", "Comments.Author" }).ToListAsync();
+                if (followPosts is not null)
+                {
+                    foreach (Post followPost in followPosts) dto.Add(_mapper.Map<PostGetDto>(followPost));
+                }
+
+               
+            }
+            IEnumerable<PostGetDto> sortedDto = dto.OrderByDescending(p => p.CreatedAt);
+            return sortedDto;
+
+        }
+
         public async Task LikePostAsync(int id)
         {
             Post post = await _postRepository.GetByIdAsync(id, true, includes: new[] {"Likes", "Likes.LikedUser", "AppUser", "AppUser.Followers" });
@@ -420,6 +450,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _postRepository.SaveChangesAsync();
            
         }
+
+
         private async Task<AppUser> _getUser(string username)
         {
             AppUser user = await _userManager.FindByNameAsync(username);
