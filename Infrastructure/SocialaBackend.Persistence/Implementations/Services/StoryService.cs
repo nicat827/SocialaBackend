@@ -119,6 +119,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             else
             {
                 _storyItemsRepository.SoftDelete(item);
+                
                 Notification newNotification = new Notification
                 {
                     AppUser = await _getUser(),
@@ -132,6 +133,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 await _hubContext.Clients.Group(_currentUsername).SendAsync("NewNotification", dto);
                 await _notificationRepository.CreateAsync(newNotification);
                 foreach (StoryItemWatcher watcher in item.Watchers) watcher.IsDeleted = true;
+            }
+            if (item.Story.LastStoryItemId == item.Id)
+            {
+                item.Story.LastItemAddedAt = null;
+                item.Story.LastStoryItemId = null;
             }
             await _storyItemsRepository.SaveChangesAsync();
 
