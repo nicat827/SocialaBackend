@@ -56,6 +56,23 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.GetCurrentUserStoryItemsAsync());
         }
 
+        [HttpPost("watch/{id}")]
+        [Authorize]
+        public async Task<IActionResult> WatchStoryItem(int id)
+        {
+            if (id <= 0) throw new InvalidIdException("Invalid id!");
+            await _service.WatchStoryItemAsync(id);
+            return NoContent();
+        }
+
+        [HttpGet("watchers/{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetStoryItemWatchers(int id)
+        {
+            if (id <= 0) throw new InvalidIdException("Invalid id!");
+            return Ok(await _service.GetStoryItemWatchersAsync(id));
+        }
+
 
 
 

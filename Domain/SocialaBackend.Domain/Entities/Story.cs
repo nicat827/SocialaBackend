@@ -17,5 +17,7 @@ namespace SocialaBackend.Domain.Entities
 
         public DateTime? LastItemAddedAt { get; set; }
         public ICollection<StoryItem> StoryItems { get; set; } = new List<StoryItem>();
+
+        public int LastStoryItemId { get; set; }
     }
 }

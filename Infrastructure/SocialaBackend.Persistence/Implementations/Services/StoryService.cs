@@ -51,7 +51,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
             StoryItem newStoryItem = new()
             {
                 Text = dto.Text,
-                Story = user.Story
+                Story = user.Story,
+                
             };
 
             FileType type = _fileService.ValidateFilesForPost(dto.File);
@@ -62,6 +63,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _storyItemsRepository.CreateAsync(newStoryItem);
             await _storyItemsRepository.SaveChangesAsync();
             user.Story.LastItemAddedAt = newStoryItem.CreatedAt;
+            user.Story.LastStoryItemId = newStoryItem.Id;
             await _storyItemsRepository.SaveChangesAsync();
         }
 
@@ -94,7 +96,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         Id = story.Id,
                         OwnerImageUrl=userFollow.ImageUrl,
                         OwnerUserName = userFollow.UserName,
-                        LastStoryPostedAt = story.LastItemAddedAt
+                        LastStoryPostedAt = story.LastItemAddedAt,
+                        LastStoryItemId = story.LastStoryItemId
                     });
                 }
             }
@@ -121,9 +124,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     AppUser = await _getUser(),
                     Title = "Story added to archive!",
                     Text = $"Your story has been succesufully added to archive!",
-                    SourceUrl = item.SourceUrl
+                    SourceUrl = item.SourceUrl,
+                    UserName = _currentUsername,
+                    Type = NotificationType.System
                 };
-                NotificationsGetDto dto = new() { Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now };
+                NotificationsGetDto dto = new() {UserName=_currentUsername, Type=newNotification.Type.ToString(), Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now };
                 await _hubContext.Clients.Group(_currentUsername).SendAsync("NewNotification", dto);
                 await _notificationRepository.CreateAsync(newNotification);
                 foreach (StoryItemWatcher watcher in item.Watchers) watcher.IsDeleted = true;
@@ -141,9 +146,38 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 if (!story.Owner.Followers.Any(f => f.UserName == _currentUsername && f.IsConfirmed == true))
                     throw new ForbiddenException("This account is private, follow for seeing stories!");
             }
-            var orderedItems = story.StoryItems.OrderBy(si => si.CreatedAt);
+            var orderedItems = story.StoryItems.Where(si => !si.IsDeleted).OrderBy(si => si.CreatedAt);
             return _mapper.Map<ICollection<StoryItemGetDto>>(orderedItems);
 
+        }
+
+        public async Task WatchStoryItemAsync(int id)
+        {
+            StoryItem? item = await _storyItemsRepository.GetByIdAsync(id,true, includes:new[] { "Watchers", "Watchers.Watcher", "Story","Story.Owner" });
+            if (item is null) throw new NotFoundException($"Story item with id {id} wasnt defined!");
+            AppUser? currentUser = await _userManager.Users
+                .Where(u => u.UserName == _currentUsername)
+                .Include(u => u.Follows.Where(f => f.IsConfirmed && f.UserName == item.Story.Owner.UserName))
+                .FirstOrDefaultAsync();
+            if (currentUser is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt defined!");
+            if (currentUser.Follows.Count == 0 && _currentUsername != item.Story.Owner.UserName) throw new DontHavePermissionException("You cant watch this story!");
+            if (!item.Watchers.Any(w => w.Watcher.UserName == _currentUsername))
+            {
+                item.Watchers.Add(new StoryItemWatcher { Watcher = await _getUser() });
+                item.WatchCount++;
+                await _storyItemsRepository.SaveChangesAsync();
+            }
+        }
+        public async Task<IEnumerable<StoryItemWatcherDto>> GetStoryItemWatchersAsync(int id)
+        {
+            StoryItem? item = await _storyItemsRepository.GetByIdAsync(id, includes: new[] { "Watchers", "Watchers.Watcher", "Story", "Story.Owner" });
+            if (item.Story.Owner.UserName != _currentUsername) throw new DontHavePermissionException("You cant see watchers of the story!");
+            ICollection<StoryItemWatcherDto> dto = new List<StoryItemWatcherDto>();
+            foreach (StoryItemWatcher watcher in item.Watchers)
+            {
+                dto.Add(new StoryItemWatcherDto { CreatedAt = watcher.CreatedAt, WatcherUserName = watcher.Watcher.UserName, Id = watcher.Id, WatcherImageUrl = watcher.Watcher.ImageUrl });
+            }
+            return dto;
         }
 
         private async Task<AppUser> _getUser()

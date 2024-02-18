@@ -37,5 +37,6 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public ICollection<int> LikedPostsIds { get; set; } = new List<int>();
         public IEnumerable<int> LikedCommentsIds { get; set; } = new List<int>();
         public IEnumerable<int> LikedRepliesIds { get; set; } = new List<int>();
+        public IEnumerable<int> WatchedStoryItemsIds { get; set; } = new List<int>();
     }
 }

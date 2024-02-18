@@ -247,6 +247,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.LikedPosts)
                     .ThenInclude(lp => lp.Post)
                 .Include(u => u.LikedComments)
+                .Include(u => u.WatchedStoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
+                    .ThenInclude(ws => ws.StoryItem)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} wasnt defined!");
             
@@ -260,6 +262,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
             dto.StoryId = user.Story.Id;
             dto.LastStoryPostedAt = user.Story.LastItemAddedAt;
+            dto.WatchedStoryItemsIds = user.WatchedStoryItems.Select(si => si.StoryItemId).ToList();
             return dto;
         }
         public async Task<bool> IsPrivateAsync(string username)

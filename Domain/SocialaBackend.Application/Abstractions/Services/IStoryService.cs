@@ -14,6 +14,8 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ICollection<StoryItemGetDto>> GetStoryItemsAsync(int storyId);
         Task<ICollection<StoryItemCurrentGetDto>> GetCurrentUserStoryItemsAsync();
         Task SoftRemoveStoryItemAsync(int id);
+        Task WatchStoryItemAsync(int id);
+        Task<IEnumerable<StoryItemWatcherDto>> GetStoryItemWatchersAsync(int id);
 
     }
 }
