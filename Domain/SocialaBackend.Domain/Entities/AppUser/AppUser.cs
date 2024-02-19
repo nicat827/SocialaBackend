@@ -44,6 +44,8 @@ namespace SocialaBackend.Domain.Entities.User
 
         public Story Story { get; set; } = null!;
 
+        public VerifyRequest? VerifyRequest { get; set; }
+
         public ICollection<Chat> Chats { get; set; } = new List<Chat>();
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public ICollection<AvatarLikeItem> LikedAvatars { get; set; } = new List<AvatarLikeItem>();

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialaBackend.Persistence.DAL;
 
@@ -11,9 +12,10 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240219090403_VerifyRequestsTableCreated")]
+    partial class VerifyRequestsTableCreated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -866,8 +868,7 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
-                        .IsUnique();
+                    b.HasIndex("AppUserId");
 
                     b.ToTable("VerifyRequests");
                 });
@@ -1147,8 +1148,8 @@ namespace SocialaBackend.Persistence.DAL.Migrations
             modelBuilder.Entity("SocialaBackend.Domain.Entities.VerifyRequest", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
-                        .WithOne("VerifyRequest")
-                        .HasForeignKey("SocialaBackend.Domain.Entities.VerifyRequest", "AppUserId")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1213,8 +1214,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.Navigation("Story")
                         .IsRequired();
-
-                    b.Navigation("VerifyRequest");
 
                     b.Navigation("WatchedStoryItems");
                 });

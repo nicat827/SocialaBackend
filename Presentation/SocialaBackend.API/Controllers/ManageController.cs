@@ -41,5 +41,33 @@ namespace SocialaBackend.API.Controllers
             return NoContent();
         }
 
+        [HttpPost("verify")]
+        [Authorize(Roles = "Member")]
+
+        public async Task<IActionResult> RequestToVerify()
+        {
+            await _service.AddRequestForVerifyAsync();
+            return NoContent();
+        }
+
+        [HttpPut("verify/{id}")]
+        [Authorize(Roles = "Admin, Moderator")]
+
+        public async Task<IActionResult> ConfirmOrCancelVerifyRequestAsync(int id, bool status)
+        {
+            if (id <= 0) throw new InvalidIdException("Id cant be negative!");
+            await _service.ConfirmOrCancelVerifyRequestAsync(id, status);
+            return NoContent();
+        }
+
+        [HttpGet("verifyRequests")]
+        [Authorize(Roles = "Admin, Moderator")]
+
+        public async Task<IActionResult> GetVerifyRequestsAsync(string sortType, bool desc, int skip)
+        {
+            if (skip < 0) throw new InvalidSkipException("Skip cant be negative!");
+            return Ok(await _service.GetVerifyRequestsAsync(sortType, desc, skip));
+        }
+
     }
 }

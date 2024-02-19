@@ -13,7 +13,7 @@ namespace SocialaBackend.Domain.Enums
     public enum NotificationType
     {
         System,
-        Email,
+        Congrat,
         Custom
     }
 }

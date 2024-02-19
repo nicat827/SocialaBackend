@@ -16,7 +16,7 @@ namespace SocialaBackend.Application.Dtos.AppUsers
         public int StoryId { get; set; }
         public string? Bio { get; set; }
 
-        
+        public bool CanSendVerifyRequest { get; set; }
 
         public string? FacebookLink { get; set; }
         public string? GithubLink { get; set; }

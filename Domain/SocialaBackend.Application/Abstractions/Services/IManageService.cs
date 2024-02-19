@@ -13,5 +13,10 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ICollection<AppUserSearchDto>> SearchUsersAsync(string searchTerm, int skip);
         Task ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles);
         Task<ManageGetDto> GetManageAsync();
+
+        Task ConfirmOrCancelVerifyRequestAsync(int id, bool status);
+
+        Task<IEnumerable<VerifyRequestGetDto>> GetVerifyRequestsAsync(string sortType, bool desc, int skip);
+        Task AddRequestForVerifyAsync();
     }
 }

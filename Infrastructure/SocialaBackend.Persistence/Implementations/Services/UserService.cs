@@ -213,7 +213,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             };
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
-            await _notificationRepository.CreateAsync(newNotification);       
+            await _notificationRepository.CreateAsync(newNotification);
+            await _notificationRepository.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
             return _mapper.Map<FollowGetDto>(followItem);
 
@@ -240,6 +241,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUserName)
                 .Include(u => u.Story)
+                .Include(u => u.VerifyRequest)
                 .Include(u => u.LikedAvatars)
                 .Include(u => u.Follows)
                 .Include(u => u.Followers)
@@ -263,6 +265,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.StoryId = user.Story.Id;
             dto.LastStoryPostedAt = user.Story.LastItemAddedAt;
             dto.WatchedStoryItemsIds = user.WatchedStoryItems.Select(si => si.StoryItemId).ToList();
+            dto.CanSendVerifyRequest = user.VerifyRequest is null || user.VerifyRequest.Status == VerifyStatus.Canceled ? true : false;
             return dto;
         }
         public async Task<bool> IsPrivateAsync(string username)
@@ -420,7 +423,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Title = "Account confirmed!",
                 Text = $"Thank you! You succesfully confirmed {dto.Email}",
                 AppUser = user,
-                Type = NotificationType.Email,
+                Type = NotificationType.Congrat,
                 UserName = user.UserName
             };
             NotificationsGetDto notify  = new() { IsChecked = false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title, Type = newNotification.Type.ToString()};
