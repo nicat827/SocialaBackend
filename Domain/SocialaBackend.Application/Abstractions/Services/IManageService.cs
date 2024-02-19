@@ -16,6 +16,7 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         Task ConfirmOrCancelVerifyRequestAsync(int id, bool status);
 
+        Task<int> GetVerifyRequestsCountAsync();
         Task<IEnumerable<VerifyRequestGetDto>> GetVerifyRequestsAsync(string sortType, bool desc, int skip);
         Task AddRequestForVerifyAsync();
     }

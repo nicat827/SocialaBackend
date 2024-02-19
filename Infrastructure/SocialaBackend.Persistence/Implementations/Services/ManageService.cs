@@ -91,11 +91,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Expression<Func<VerifyRequest, object>>? order = null;
             switch (sortType)
             {
-                case "time":
+                case "New":
                     order = vr => vr.CreatedAt;
                     break;
-                case "followers":
-                    order = vr => vr.AppUser.Followers;
+                case "Register Time":
+                    order = vr => vr.AppUser.Story.CreatedAt;
+                    break;
+                case "Followers":
+                    order = vr => vr.AppUser.Followers.Count;
                     break;
 
             }
@@ -105,7 +108,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 desc,
                 vr => vr.Status == VerifyStatus.Pending,
                 skip,
-                10,
+                1,
                 expressionIncludes: vr=> vr.AppUser.Followers.Where(f => f.IsConfirmed),
                 includes:new[] { "AppUser", "AppUser.Story" }).ToListAsync();
            ICollection<VerifyRequestGetDto> dto = new List<VerifyRequestGetDto>();
@@ -124,6 +127,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             return dto;
 
+        }
+
+        public async Task<int> GetVerifyRequestsCountAsync()
+        {
+            return await _verifyRequestRepository.GetCountAsync(vr => vr.Status == VerifyStatus.Pending);
         }
         public async Task ConfirmOrCancelVerifyRequestAsync(int id, bool status)
         {

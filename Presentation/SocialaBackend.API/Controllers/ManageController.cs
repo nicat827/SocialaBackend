@@ -69,5 +69,13 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.GetVerifyRequestsAsync(sortType, desc, skip));
         }
 
+        [HttpGet("verifyRequestsCount")]
+        [Authorize]
+
+        public async Task<IActionResult> GetCount()
+        {
+            return Ok(await _service.GetVerifyRequestsCountAsync());
+        }
+
     }
 }
