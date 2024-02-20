@@ -20,7 +20,7 @@ namespace SocialaBackend.Domain.Entities
         public string? LastMessage { get; set; }
         public DateTime? LastMessageSendedAt { get; set; }
         public string LastMessageSendedBy { get; set; } = null!;
-
+        public bool LastMessageIsMedia { get; set; }
         public bool LastMessageIsChecked { get; set; }
         public string ConnectionId { get; set; } = null!;
 

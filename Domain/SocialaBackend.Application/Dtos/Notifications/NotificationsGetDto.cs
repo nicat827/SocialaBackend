@@ -13,7 +13,7 @@ namespace SocialaBackend.Application.Dtos
         public string? Title { get; set; }
         public bool IsChecked { get; set; }
         public string Text { get; set; } = null!;
-        public string UserName { get; set; } = null!;
+        public string? UserName { get; set; } = null!;
 
         public string? SourceUrl { get; set; }
         public DateTime CreatedAt { get; set; }

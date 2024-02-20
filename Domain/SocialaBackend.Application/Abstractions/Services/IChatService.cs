@@ -17,7 +17,7 @@ namespace SocialaBackend.Application.Abstractions.Services
 
         Task<ChatGetDto> GetChatByIdAsync(int id, string userName);
 
-        Task<ICollection<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);
+        Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);
         Task<int> GetNewMessagesCountAsync(string userName);    
     }
 }

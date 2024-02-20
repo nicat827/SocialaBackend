@@ -175,6 +175,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
   
         public async Task<ManageGetDto> GetManageAsync()
         {
+            IEnumerable<AppUser> admins = await _userManager.GetUsersInRoleAsync(UserRole.Admin.ToString());
+            IEnumerable<AppUser> moderators = await _userManager.GetUsersInRoleAsync(UserRole.Moderator.ToString());
+            IEnumerable<AppUser> verified = await _userManager.GetUsersInRoleAsync(UserRole.Verified.ToString());
             return new ManageGetDto
             {
                 RegisteredUsersCountByGender = new StatOfRegisteredUsersDto
@@ -182,7 +185,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     MaleCount = await _userManager.Users.Where(u => u.Gender == Gender.Male).CountAsync(),
                     FemaleCount = await _userManager.Users.Where(u => u.Gender == Gender.Female).CountAsync(),
                     OtherCount = await _userManager.Users.Where(u => u.Gender == Gender.None).CountAsync(),
-                }
+                },
+                AdminsCount = admins.Count(),
+                ModeratorsCount = moderators.Count(),
+                VerifiedUsersCount  = verified.Count(),
+                AllUsersCount =  await _userManager.Users.CountAsync()
             };
         }
 

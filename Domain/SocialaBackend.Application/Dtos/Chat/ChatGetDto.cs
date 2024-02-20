@@ -14,6 +14,6 @@ namespace SocialaBackend.Application.Dtos.Chat
         public string ChatPartnerSurname { get; set; } = null!;
         public string? ChatPartnerImageUrl { get; set; }
         public string ConnectionId { get; set; } = null!;
-        public ICollection<MessageGetDto> Messages { get; set; } = new List<MessageGetDto>();
+        public IEnumerable<MessageGetDto> Messages { get; set; } = new List<MessageGetDto>();
     }
 }

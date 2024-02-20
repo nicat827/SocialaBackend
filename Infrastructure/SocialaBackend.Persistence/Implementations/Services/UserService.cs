@@ -142,10 +142,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _userManager.UpdateAsync(currentUser);
         }
 
-        public async Task<ICollection<ChatItemSearchGetDto>> SearchUsersAsync(string searchParam)
+        public async Task<ICollection<ChatItemSearchGetDto>> SearchUsersAsync(string searchParam, int skip)
         {
             ICollection<AppUser> users = await _userManager.Users.Where(u => u.UserName != _currentUserName && u.UserName.Contains(searchParam)
-            || u.Name.ToLower().Contains(searchParam.ToLower()) || u.Surname.ToLower().Contains(searchParam.ToLower())).ToListAsync();
+            || u.Name.ToLower().Contains(searchParam.ToLower()) || u.Surname.ToLower().Contains(searchParam.ToLower())).Skip(skip).Take(10).ToListAsync();
             ICollection<ChatItemSearchGetDto> dto = new List<ChatItemSearchGetDto>();
             foreach (AppUser user in users)
             {

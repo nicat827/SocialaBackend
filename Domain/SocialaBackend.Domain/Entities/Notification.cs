@@ -18,7 +18,7 @@ namespace SocialaBackend.Domain.Entities
         public AppUser AppUser { get; set; } = null!;
         public NotificationType Type { get; set; }
         public bool IsChecked { get; set; }
-        public string UserName { get; set; } = null!;
+        public string? UserName { get; set; } = null!;
         public int? SrcId { get; set; }
     }
 }

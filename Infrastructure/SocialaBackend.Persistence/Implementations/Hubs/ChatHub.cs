@@ -106,7 +106,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 ICollection<Message> allUnreadedMessages = await _messageRepository.GetAllUnreadedMessagesAsync(chatId);
                 foreach (Message mess in allUnreadedMessages)
                 {
-                    if (mess.SendedBy != userName) 
+                    if (mess.Sender != userName) 
                     {
                         mess.IsChecked = true;
                         await _messageRepository.SaveChangesAsync();
@@ -173,7 +173,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             if (skip < 0) await Clients.Client(Context.ConnectionId).SendAsync("RecieveChatMessages", new List<MessageGetDto>());
             try
             {
-                ICollection<MessageGetDto> messages = await _chatService.GetMessagesAsync(chatId, userName, skip);
+                IEnumerable<MessageGetDto> messages = await _chatService.GetMessagesAsync(chatId, userName, skip);
                 await Clients.Client(Context.ConnectionId).SendAsync("RecieveChatMessages", messages);
             }
             catch (BaseException ex)

@@ -1,14 +1,19 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.Chat;
 using SocialaBackend.Application.Exceptions;
+using SocialaBackend.Application.Exceptions.Base;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
+using SocialaBackend.Domain.Enums;
+using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -20,11 +25,21 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class ChatService : IChatService
     {
+        private readonly IMapper _mapper;
+        private readonly INotificationRepository _notificationRepository;
+        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly IFileService _fileService;
+        private readonly ICloudinaryService _cloudinaryService;
         private readonly IMessageRepository _messageRepository;
         private readonly IChatRepository _chatRepository;
         private readonly UserManager<AppUser> _userManager;
-        public ChatService(IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
+        public ChatService(IMapper mapper, INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext, IFileService fileService, ICloudinaryService cloudinaryService, IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
         {
+            _mapper = mapper;
+            _notificationRepository = notificationRepository;
+            _hubContext = hubContext;
+            _fileService = fileService;
+            _cloudinaryService = cloudinaryService;
             _messageRepository = messageRepository;
             _chatRepository = chatRepository;
             _userManager = userManager;
@@ -33,14 +48,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
         }
         public async Task<ChatGetDto> GetChatByIdAsync(int id, string userName)
         {
-            Chat? chat = await _chatRepository.GetByIdAsync(id, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes: new[] { "FirstUser", "SecondUser" });
+            Chat? chat = await _chatRepository.GetByIdAsync(id, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes: new[] { "FirstUser", "SecondUser", "Messages.Media" });
             if (chat is null) throw new NotFoundException($"Chat with id {id} doesnt exits!");
             if (chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
                 throw new DontHavePermissionException("You cant get this chat!");
             var firstUser = chat.FirstUser;
             //var messages = chat.Messages.OrderByDescending(m => m.CreatedAt);
-            ICollection<MessageGetDto> messagesDto = new List<MessageGetDto>();
-            foreach (Message message in  chat.Messages) messagesDto.Add(new MessageGetDto {Id=message.Id, CreatedAt = message.CreatedAt, Sender = message.SendedBy, Text = message.Text, IsChecked = message.IsChecked}); 
             return new ChatGetDto
             {
                 Id = chat.Id,
@@ -48,25 +61,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 ChatPartnerSurname = firstUser.UserName == userName ? chat.SecondUser.Surname : chat.FirstUser.Surname,
                 ChatPartnerImageUrl = firstUser.UserName == userName ? chat.SecondUser.ImageUrl : chat.FirstUser.ImageUrl,
                 ChatPartnerUserName = firstUser.UserName == userName ? chat.SecondUser.UserName : chat.FirstUser.UserName,
-                Messages = messagesDto,
+                Messages = _mapper.Map<IEnumerable<MessageGetDto>>(chat.Messages),
                 ConnectionId = chat.ConnectionId,
             };
         }
 
-        public async Task<ICollection<MessageGetDto>> GetMessagesAsync(int chatId,string userName, int skip)
+        public async Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId,string userName, int skip)
         {
-            Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser" });
+            Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser","Messages.Media" });
             if (chat is null || chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
                 throw new DontHavePermissionException("You cant get this chat!");
-            ICollection<MessageGetDto> messagesDto = new List<MessageGetDto>();
-
-            foreach (Message message in chat.Messages) messagesDto.Add(new MessageGetDto { 
-                Id = message.Id,
-                CreatedAt = message.CreatedAt,
-                Sender = message.SendedBy,
-                Text = message.Text,
-                IsChecked = message.IsChecked });
-            return messagesDto;
+            return _mapper.Map<IEnumerable<MessageGetDto>>(chat.Messages);
         }
 
 
@@ -77,7 +82,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             int count = 0;
             foreach (Chat chat in chats)
             {
-                count += chat.Messages.Where(m => m.IsChecked == false && m.SendedBy != userName).Count();
+                count += chat.Messages.Where(m => m.IsChecked == false && m.Sender != userName).Count();
             }
             return count;
                 
@@ -140,6 +145,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
         {
+            if (dto.Text is null && dto.Media is null) throw new MessageValidationException("Message must have at least text or media!");
+            AppUser user = await _userManager.FindByNameAsync(dto.Sender);
+            if (user is null) throw new AppUserNotFoundException($"User with username {dto.Sender} doesnt exists!");
             Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId,true, includes:new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {dto.ChatId} doesnt exists!");
             if (chat.FirstUser.UserName != dto.Sender && chat.SecondUser.UserName != dto.Sender)
@@ -147,16 +155,65 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Message message = new Message
             {
                 Text = dto.Text,
-                SendedBy = dto.Sender,
+                Sender = dto.Sender,
                 ChatId = chat.Id
+              
             };
+            bool exceptionCatched = false;
+            bool isSucceedUpload = false;
+            if (dto.Media is not null)
+            {
+                foreach (IFormFile file in dto.Media)
+                {
+                    try
+                    {
+                        FileType type = _fileService.ValidateFilesForPost(file);
+                        _fileService.CheckFileSize(file,100);
+                        string localUrl = await _fileService.CreateFileAsync(file, "uploads", "chats");
+                        string realUrl = await _cloudinaryService.UploadFileAsync(localUrl, type, "uploads", "chats");
+                        message.Media.Add(new MessageMedia { MediaUrl = realUrl, MediaType = type});
+                        if (!isSucceedUpload) isSucceedUpload = true;
+
+
+                    }
+                    catch (BaseException ex)
+                    {
+                        exceptionCatched = true;
+                    }
+                }
+            }
+            if (dto.Media is not null && !isSucceedUpload && dto.Text is null) throw new MessageValidationException("It seems that the media you uploaded is invalid. Please ensure the file format is either an image or video, and its size doesn't exceed 100MB.");
+            if (exceptionCatched)
+            {
+                Notification notification = new Notification
+                {
+                    Title = "Oops!",
+                    Text = "Some media were not sent because they did not pass validation.",
+                    Type = NotificationType.System,
+                    AppUser = user,
+                };
+                await _notificationRepository.CreateAsync(notification);
+                await _notificationRepository.SaveChangesAsync();
+                NotificationsGetDto notificationDto = new NotificationsGetDto {
+                    Title = notification.Title,
+                    Text = notification.Text,
+                    Type = notification.Type.ToString(),
+                    Id = notification.Id,
+                    CreatedAt = notification.CreatedAt,
+                    IsChecked = notification.IsChecked
+
+                };
+                await _hubContext.Clients.Group(dto.Sender).SendAsync("NewNotification", notificationDto);
+            }
+
+            chat.LastMessageIsMedia = isSucceedUpload;
             chat.LastMessage = dto.Text;
             chat.LastMessageSendedAt = DateTime.Now;
             chat.LastMessageSendedBy = dto.Sender;
             chat.LastMessageIsChecked = false;
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
-            return new MessageGetDto { CreatedAt = message.CreatedAt, Id = message.Id, Text = message.Text, Sender = message.SendedBy };
+            return _mapper.Map<MessageGetDto>(message);
         }
 
 
@@ -191,7 +248,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Message newMessage = new Message
             {
                 Chat = chat,
-                SendedBy = dto.Sender,
+                Sender = dto.Sender,
                 Text = dto.Text,
             };
             chat.LastMessage = newMessage.Text;
@@ -202,7 +259,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             await _messageRepository.CreateAsync(newMessage);
             await _chatRepository.SaveChangesAsync();
-            MessageGetDto messageDto = new MessageGetDto { CreatedAt = newMessage.CreatedAt, Id = newMessage.Id, Text = newMessage.Text, Sender = newMessage.SendedBy };
+            MessageGetDto messageDto = new MessageGetDto { CreatedAt = newMessage.CreatedAt, Id = newMessage.Id, Text = newMessage.Text, Sender = newMessage.Sender };
             var firstUser = chat.FirstUser;
             ChatGetDto chatDto = new ChatGetDto
             {
@@ -227,7 +284,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 isDescending: true,
                 expression: c => c.FirstUser.UserName == userName
                 || c.SecondUser.UserName == userName,
-                expressionIncludes: c => c.Messages.Where(m => !m.IsChecked && m.SendedBy != userName),
+                expressionIncludes: c => c.Messages.Where(m => !m.IsChecked && m.Sender != userName),
                 includes: new[] { "FirstUser", "SecondUser" }).ToListAsync();
 
             ICollection<ChatItemGetDto> dto = new List<ChatItemGetDto>();

@@ -16,7 +16,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task SetNewPasswordAsync(AppUserResetPasswordDto dto);
         Task<AppUserLoginResponseDto> LoginAsync(AppUserLoginDto dto);
         Task<TokenResponseDto> RefreshAsync(string refreshToken);
-        Task<ICollection<ChatItemSearchGetDto>> SearchUsersAsync(string searchParam);
+        Task<ICollection<ChatItemSearchGetDto>> SearchUsersAsync(string searchParam, int skip);
         Task LogoutAsync(string refreshToken);
         Task<AppUserGetDto> GetAsync(string username);
         Task<CurrentAppUserGetDto> GetCurrentUserAsync();

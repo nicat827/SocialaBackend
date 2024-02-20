@@ -9,9 +9,9 @@ namespace SocialaBackend.Domain.Entities
 {
     public class Message:BaseEntity
     {
-        public string Text { get; set; } = null!;
-
-        public string SendedBy { get; set; } = null!;
+        public string? Text { get; set; } = null!;
+        public ICollection<MessageMedia> Media { get; set; } = new List<MessageMedia>();
+        public string Sender { get; set; } = null!;
 
         public bool IsChecked { get; set; }
         //relational
