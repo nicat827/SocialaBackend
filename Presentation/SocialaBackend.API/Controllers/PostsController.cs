@@ -40,16 +40,25 @@ namespace SocialaBackend.API.Controllers
             return NoContent();
         }
         [HttpGet("{username}")]
+        [Authorize]
         public async Task<IActionResult> Get(string username)
         {
             return Ok(await _service.GetPostsAsync(username));
+        } 
+        [HttpGet("archive")]
+        [Authorize]
+        public async Task<IActionResult> GetArchive(int skip)
+        {
+            return Ok(await _service.GetArchivedPostsAsync(skip));
         }
         [HttpGet("feed/{skip}")]
+        [Authorize]
         public async Task<IActionResult> GetFeed(int skip)
         {
             return Ok(await _service.GetFeedPostsAsync(skip));
         }
         [HttpPut("recover/{id}")]
+        [Authorize]
         public async Task<IActionResult> Recover(int id)
         {
             await _service.RecoverPostAsync(id);

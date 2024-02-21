@@ -102,6 +102,21 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return _mapper.Map<CommentGetDto>(newComment);
 
         }
+
+        public async Task<IEnumerable<PostGetDto>> GetArchivedPostsAsync(int skip)
+        {
+
+            IEnumerable<Post> posts = await _postRepository.GetCollection(
+                p => p.IsDeleted && p.AppUser.UserName == _currentUserName,
+                skip: skip,
+                take: 10,
+                iqnoreQuery: true,
+                expressionIncludes: p => p.Comments.Take(5),
+                includes: new[] { "AppUser", "Comments.Author", "Items" });
+            return _mapper.Map<IEnumerable<PostGetDto>>(posts);
+
+
+        }
         public async Task LikeReplyAsync(int id)
         {
             AppUser user = await _userManager.FindByNameAsync(_currentUserName);
