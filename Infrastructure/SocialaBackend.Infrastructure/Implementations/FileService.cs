@@ -63,7 +63,17 @@ namespace SocialaBackend.Infrastructure.Implementations
             }
             return fileName;
         }
+        public async Task<string> CreateFileFromBytesAsync(byte bytes, params string[] folders)
+        {
+            string fileName = Guid.NewGuid().ToString();/* + file.FileName.Substring(file.FileName.LastIndexOf("."));*/
+            //string path = GeneratePath(fileName, folders);
 
+            //using (FileStream stream = new FileStream(path, FileMode.Create))
+            //{
+            //    await file.CopyToAsync(stream);
+            //}
+            return fileName;
+        }
         public void DeleteFile(string fileName, params string[] folders)
         {
             string path = GeneratePath(fileName, folders);

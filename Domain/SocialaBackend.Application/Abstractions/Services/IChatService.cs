@@ -14,7 +14,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ICollection<ChatItemSearchGetDto>> SearchChatUsersAsync(string searchParam, string currentUsername);
         Task<(MessageGetDto, ChatGetDto)> SendMessageFromProfileAsync(MessagePostDtoFromProfile dto);
         Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName);
-
+        Task<ChatDeleteGetDto> DeleteMessageAsync(int id, string userName);
         Task<ChatGetDto> GetChatByIdAsync(int id, string userName);
 
         Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);

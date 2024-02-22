@@ -66,6 +66,24 @@ namespace SocialaBackend.Persistence.Implementations.Services
             };
         }
 
+        public async Task<ChatDeleteGetDto> DeleteMessageAsync(int id, string userName)
+        {
+            Message? message = await _messageRepository.GetByIdAsync(id, isTracking:true, expressionIncludes: m => m.Chat.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes:new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
+            if (message is null) throw new NotFoundException($"Message with id {id} wasnt found!");
+            if (message.Sender != userName) throw new DontHavePermissionException("You cant delete this message!");
+            _messageRepository.Delete(message);
+            IEnumerable<Message> chatMessages = message.Chat.Messages;
+            await _messageRepository.SaveChangesAsync();
+            return new ChatDeleteGetDto
+            {
+                Id = message.Chat.Id,
+                FirstUserUserName = message.Chat.FirstUser.UserName,
+                SecondUserUserName = message.Chat.SecondUser.UserName,
+                Messages = _mapper.Map<IEnumerable<MessageGetDto>>(message.Chat.Messages),
+                ConnectionId = message.Chat.ConnectionId,
+            };
+
+        }
         public async Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId,string userName, int skip)
         {
             Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser","Messages.Media" });
@@ -163,16 +181,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
             bool isSucceedUpload = false;
             if (dto.Media is not null)
             {
-                foreach (IFormFile file in dto.Media)
+                foreach (byte fileByte in dto.Media)
                 {
                     try
                     {
-                        FileType type = _fileService.ValidateFilesForPost(file);
-                        _fileService.CheckFileSize(file,100);
-                        string localUrl = await _fileService.CreateFileAsync(file, "uploads", "chats");
-                        string realUrl = await _cloudinaryService.UploadFileAsync(localUrl, type, "uploads", "chats");
-                        message.Media.Add(new MessageMedia { MediaUrl = realUrl, MediaType = type});
-                        if (!isSucceedUpload) isSucceedUpload = true;
+
+                        //FileType type = _fileService.ValidateFilesForPost(file);
+                        //_fileService.CheckFileSize(file, 100);
+                        //string localUrl = await _fileService.CreateFileAsync(file, "uploads", "chats");
+                        //string realUrl = await _cloudinaryService.UploadFileAsync(localUrl, type, "uploads", "chats");
+                        //message.Media.Add(new MessageMedia { MediaUrl = realUrl, MediaType = type });
+                        //if (!isSucceedUpload) isSucceedUpload = true;
 
 
                     }

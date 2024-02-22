@@ -18,6 +18,8 @@ namespace SocialaBackend.Application.Abstractions.Services
         string GeneratePath(string imageUrl, params string[] folders);
         
         Task<string> CreateFileAsync(IFormFile file, params string[] folders);
+
+        Task<string> CreateFileFromBytesAsync(byte bytes, params string[] folders);
         void DeleteFile(string fileName, params string[] folders);
     }
 }

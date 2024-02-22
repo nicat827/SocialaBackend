@@ -73,7 +73,11 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             }
 
         }
-
+        public async Task SetTypingStatus(string userName, bool status)
+        {
+            
+            await Clients.Group(userName).SendAsync("GetTypingStatus", status);
+        }
         public async Task ConnectToChat(int chatId, string userName)
         {
             ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId, userName);
@@ -135,7 +139,17 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
             await Clients.Client(Context.ConnectionId).SendAsync("ChatConnectResponse", chat);
         }
+        public async Task DeleteMessage(int id, string userName)
+        {
+            if (id <= 0) return;
+            ChatDeleteGetDto dto = await _chatService.DeleteMessageAsync(id, userName);
+            ICollection<ChatItemGetDto> firstChatItems = await _chatService.GetChatItemsAsync(dto.FirstUserUserName);
+            ICollection<ChatItemGetDto> secondChatItems = await _chatService.GetChatItemsAsync(dto.SecondUserUserName);
 
+            await Clients.Group(dto.ConnectionId).SendAsync("GetMessagesAfterDelete", dto.Messages);
+            await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatItems", firstChatItems);
+            await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatItems", secondChatItems);
+        }
         public async Task SendMessageByChatId(MessagePostDto dto)
         {
             try
@@ -164,7 +178,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             }
             catch (BaseException ex)
             {
-                await Clients.Client(Context.ConnectionId).SendAsync("SendMessageError", $"{ex.Message}");
+                await Clients.Client(Context.ConnectionId).SendAsync("SendMessageError", $"{ex}");
             }
         }
 
