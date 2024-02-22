@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using HeyRed.Mime;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualBasic.FileIO;
 using SocialaBackend.Application.Abstractions.Services;
@@ -63,16 +64,28 @@ namespace SocialaBackend.Infrastructure.Implementations
             }
             return fileName;
         }
-        public async Task<string> CreateFileFromBytesAsync(byte bytes, params string[] folders)
-        {
-            string fileName = Guid.NewGuid().ToString();/* + file.FileName.Substring(file.FileName.LastIndexOf("."));*/
-            //string path = GeneratePath(fileName, folders);
 
-            //using (FileStream stream = new FileStream(path, FileMode.Create))
-            //{
-            //    await file.CopyToAsync(stream);
-            //}
-            return fileName;
+        public FileType GetFileType(string fileName)
+        {
+            string mimeType = MimeTypesMap.GetMimeType(Path.GetExtension(fileName));
+
+            if (mimeType.StartsWith("image/"))
+            {
+                return FileType.Image;
+            }
+            else if (mimeType.StartsWith("video/"))
+            {
+                return FileType.Video;
+            }
+            throw new FileValidationException("Unsupported file type!");
+           
+        }
+        public async Task<string> CreateFileFromBytesAsync(byte[] bytes, string fileName, params string[] folders)
+        {
+            string newFileName = Guid.NewGuid().ToString()+ fileName.Substring(fileName.LastIndexOf("."));
+            string path = GeneratePath(newFileName, folders);
+            await File.WriteAllBytesAsync(path, bytes);
+            return newFileName;
         }
         public void DeleteFile(string fileName, params string[] folders)
         {

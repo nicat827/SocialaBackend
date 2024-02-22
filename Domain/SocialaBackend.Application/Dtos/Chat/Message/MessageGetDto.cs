@@ -11,7 +11,7 @@ namespace SocialaBackend.Application.Dtos
         public int Id { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string? Text { get; set; } = null!;
-        public IEnumerable<MessageMediaGetDto> Media { get; set; } = new List<MessageMediaGetDto>();
+        //public IEnumerable<MessageMediaGetDto> Media { get; set; } = new List<MessageMediaGetDto>();
         public bool IsChecked { get; set; }
         public string Sender { get; set; } = null!;
     }

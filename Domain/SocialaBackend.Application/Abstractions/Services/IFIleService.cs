@@ -14,12 +14,12 @@ namespace SocialaBackend.Application.Abstractions.Services
         void CheckFileType(IFormFile file, FileType type);
         void CheckFileSize(IFormFile file, int maxSize, FileSize type = FileSize.Mb);
         FileType ValidateFilesForPost(IFormFile file);
-
+        FileType GetFileType(string fileName);
         string GeneratePath(string imageUrl, params string[] folders);
         
         Task<string> CreateFileAsync(IFormFile file, params string[] folders);
 
-        Task<string> CreateFileFromBytesAsync(byte bytes, params string[] folders);
+        Task<string> CreateFileFromBytesAsync(byte[] bytes, string fileName, params string[] folders);
         void DeleteFile(string fileName, params string[] folders);
     }
 }

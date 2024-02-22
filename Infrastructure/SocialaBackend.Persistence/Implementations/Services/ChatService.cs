@@ -163,7 +163,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
         {
-            if (dto.Text is null && dto.Media is null) throw new MessageValidationException("Message must have at least text or media!");
+            //if (dto.Text is null && dto.Media is null) throw new MessageValidationException("Message must have at least text or media!");
             AppUser user = await _userManager.FindByNameAsync(dto.Sender);
             if (user is null) throw new AppUserNotFoundException($"User with username {dto.Sender} doesnt exists!");
             Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId,true, includes:new[] { "FirstUser", "SecondUser" });
@@ -175,57 +175,53 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = dto.Text,
                 Sender = dto.Sender,
                 ChatId = chat.Id
-              
             };
-            bool exceptionCatched = false;
-            bool isSucceedUpload = false;
-            if (dto.Media is not null)
-            {
-                foreach (byte fileByte in dto.Media)
-                {
-                    try
-                    {
+            //bool exceptionCatched = false;
+            //bool isSucceedUpload = false;
+            //if (dto.Media is not null)
+            //{
+            //    foreach (MediaPostDto media in dto.Media)
+            //    {
+            //        try
+            //        {
+                        
+            //            FileType type = _fileService.GetFileType(media.FileName);
+            //            string localUrl = await _fileService.CreateFileFromBytesAsync(media.MediaInBytes, media.FileName, "uploads", "chats");
+            //            string realUrl = await _cloudinaryService.UploadFileAsync(localUrl, type, "uploads", "chats");
+            //            message.Media.Add(new MessageMedia { MediaUrl = realUrl, MediaType = type });
+            //            if (!isSucceedUpload) isSucceedUpload = true;
+            //        }
+            //        catch (BaseException ex)
+            //        {
+            //            exceptionCatched = true;
+            //        }
+            //    }
+            //}
+            //if (dto.Media is not null && !isSucceedUpload && dto.Text is null) throw new MessageValidationException("It seems that the media you uploaded is invalid. Please ensure the file format is either an image or video, and its size doesn't exceed 100MB.");
+            //if (exceptionCatched)
+            //{
+            //    Notification notification = new Notification
+            //    {
+            //        Title = "Oops!",
+            //        Text = "Some media were not sent because they did not pass validation.",
+            //        Type = NotificationType.System,
+            //        AppUser = user,
+            //    };
+            //    await _notificationRepository.CreateAsync(notification);
+            //    await _notificationRepository.SaveChangesAsync();
+            //    NotificationsGetDto notificationDto = new NotificationsGetDto {
+            //        Title = notification.Title,
+            //        Text = notification.Text,
+            //        Type = notification.Type.ToString(),
+            //        Id = notification.Id,
+            //        CreatedAt = notification.CreatedAt,
+            //        IsChecked = notification.IsChecked
 
-                        //FileType type = _fileService.ValidateFilesForPost(file);
-                        //_fileService.CheckFileSize(file, 100);
-                        //string localUrl = await _fileService.CreateFileAsync(file, "uploads", "chats");
-                        //string realUrl = await _cloudinaryService.UploadFileAsync(localUrl, type, "uploads", "chats");
-                        //message.Media.Add(new MessageMedia { MediaUrl = realUrl, MediaType = type });
-                        //if (!isSucceedUpload) isSucceedUpload = true;
+            //    };
+            //    await _hubContext.Clients.Group(dto.Sender).SendAsync("NewNotification", notificationDto);
+            //}
 
-
-                    }
-                    catch (BaseException ex)
-                    {
-                        exceptionCatched = true;
-                    }
-                }
-            }
-            if (dto.Media is not null && !isSucceedUpload && dto.Text is null) throw new MessageValidationException("It seems that the media you uploaded is invalid. Please ensure the file format is either an image or video, and its size doesn't exceed 100MB.");
-            if (exceptionCatched)
-            {
-                Notification notification = new Notification
-                {
-                    Title = "Oops!",
-                    Text = "Some media were not sent because they did not pass validation.",
-                    Type = NotificationType.System,
-                    AppUser = user,
-                };
-                await _notificationRepository.CreateAsync(notification);
-                await _notificationRepository.SaveChangesAsync();
-                NotificationsGetDto notificationDto = new NotificationsGetDto {
-                    Title = notification.Title,
-                    Text = notification.Text,
-                    Type = notification.Type.ToString(),
-                    Id = notification.Id,
-                    CreatedAt = notification.CreatedAt,
-                    IsChecked = notification.IsChecked
-
-                };
-                await _hubContext.Clients.Group(dto.Sender).SendAsync("NewNotification", notificationDto);
-            }
-
-            chat.LastMessageIsMedia = isSucceedUpload;
+            //chat.LastMessageIsMedia = isSucceedUpload;
             chat.LastMessage = dto.Text;
             chat.LastMessageSendedAt = DateTime.Now;
             chat.LastMessageSendedBy = dto.Sender;
