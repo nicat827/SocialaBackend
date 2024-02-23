@@ -16,10 +16,10 @@ namespace SocialaBackend.Domain.Entities
         public AppUser FirstUser { get; set; } = null!;
         public string SecondUserId { get; set; } = null!;
         public AppUser SecondUser { get; set;} = null!;
-        public ICollection<Message> Messages { get; set; } = new List<Message>();
+        public IList<Message> Messages { get; set; } = new List<Message>();
         public string? LastMessage { get; set; }
         public DateTime? LastMessageSendedAt { get; set; }
-        public string LastMessageSendedBy { get; set; } = null!;
+        public string? LastMessageSendedBy { get; set; } = null!;
         public bool LastMessageIsMedia { get; set; }
         public bool LastMessageIsChecked { get; set; }
         public string ConnectionId { get; set; } = null!;

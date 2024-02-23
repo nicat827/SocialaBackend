@@ -71,8 +71,25 @@ namespace SocialaBackend.Persistence.Implementations.Services
             Message? message = await _messageRepository.GetByIdAsync(id, isTracking:true, expressionIncludes: m => m.Chat.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes:new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
             if (message is null) throw new NotFoundException($"Message with id {id} wasnt found!");
             if (message.Sender != userName) throw new DontHavePermissionException("You cant delete this message!");
+            IList<Message> chatMessages = message.Chat.Messages;
+
+            string? lastMessage = chatMessages.FirstOrDefault().Text;
             _messageRepository.Delete(message);
-            IEnumerable<Message> chatMessages = message.Chat.Messages;
+            if (lastMessage == message.Text)
+            {
+                if (message.Chat.Messages.Count > 1)
+                {
+                    message.Chat.LastMessageSendedAt = chatMessages[1].CreatedAt;
+                    message.Chat.LastMessageSendedBy = chatMessages[1].Sender;
+                    message.Chat.LastMessage = chatMessages[1].Text;
+                }
+                else
+                {
+                    message.Chat.LastMessageSendedAt =  null;
+                    message.Chat.LastMessageSendedBy = null;
+                    message.Chat.LastMessage = null;
+                }
+            }
             await _messageRepository.SaveChangesAsync();
             return new ChatDeleteGetDto
             {
