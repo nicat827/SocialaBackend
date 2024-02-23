@@ -72,10 +72,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
             AppUser? user =  await _userManager.Users
                 .Where(u => u.UserName == _currentUsername)
                 .Include(u => u.Story)
-                    .ThenInclude(s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now && si.IsDeleted == false))
+                    .ThenInclude(s => s.StoryItems.Where(si => !si.IsDeleted))
                 .FirstOrDefaultAsync();
-            var orderedItems = user.Story.StoryItems.OrderBy(s => s.CreatedAt);
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
+            var mustAddToarchiveStoryItems = user.Story.StoryItems.Where(si => si.CreatedAt.AddDays(1) < DateTime.Now);
+            if (mustAddToarchiveStoryItems is not null)
+            {
+                foreach (var item in mustAddToarchiveStoryItems)
+                {
+                    item.IsDeleted = true;
+                    
+                }
+                await _storyItemsRepository.SaveChangesAsync();
+            }
+            var orderedItems = user.Story.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now).OrderBy(s => s.CreatedAt);
             return _mapper.Map<ICollection<StoryItemCurrentGetDto>>(orderedItems);
         }
 
@@ -105,7 +115,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return sortedDto;
 
         }
-        
+
+        public async Task<IEnumerable<StoryItemGetDto>> GetArchivedStoryItemsAsync(int skip)
+        {
+            IEnumerable<StoryItem> storyItems = await _storyItemsRepository.GetCollection
+                (
+                    expression: si => si.IsDeleted && si.Story.Owner.UserName == _currentUsername,
+                    skip: skip,
+                    iqnoreQuery: true,
+                    includes: new[] { "Story", "Story.Owner" }
+
+            );
+            return _mapper.Map<IEnumerable<StoryItemGetDto>>(storyItems);
+        }
+
         public async Task SoftRemoveStoryItemAsync(int id)
         {
             StoryItem item = await _storyItemsRepository.GetByIdAsync(id, true, iqnoreQuery: true, includes:new[] { "Watchers", "Story", "Story.Owner" });

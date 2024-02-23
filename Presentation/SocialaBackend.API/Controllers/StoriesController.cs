@@ -73,9 +73,13 @@ namespace SocialaBackend.API.Controllers
             return Ok(await _service.GetStoryItemWatchersAsync(id));
         }
 
+        [HttpGet("archive")]
+        [Authorize]
 
-
-
-
+        public async Task<IActionResult> GetStoriesArchive(int skip)
+        {
+            if (skip < 0) throw new InvalidSkipException($"Skip cant be negative!");
+            return Ok(await _service.GetArchivedStoryItemsAsync(skip));
+        }
     }
 }
