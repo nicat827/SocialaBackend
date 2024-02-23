@@ -82,7 +82,21 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             foreach (UserRole role in roles)
             {
-                if (!await _userManager.IsInRoleAsync(user, role.ToString())) await _userManager.AddToRoleAsync(user, role.ToString());
+                if (!await _userManager.IsInRoleAsync(user, role.ToString()))
+                {
+                    if (role == UserRole.Verified)
+                    {
+                        VerifyRequest request = new VerifyRequest
+                        {
+                            AppUser = user,
+                            Status = VerifyStatus.Verified
+                        };
+                        await _verifyRequestRepository.CreateAsync(request);
+                        await _verifyRequestRepository.SaveChangesAsync();
+                    }
+                    await _userManager.AddToRoleAsync(user, role.ToString());
+                }
+
             }
           
         }
@@ -167,9 +181,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
         {
             AppUser? user = await _userManager.FindByNameAsync(_currentUserName);
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
-            VerifyRequest request = await _verifyRequestRepository.Get(vr => vr.AppUserId  == user.Id, includes:"AppUser");
-            if (request is not null) throw new UserAlreadyExistException("You already have a request for verify!");
-            await _verifyRequestRepository.CreateAsync(new VerifyRequest { AppUserId = user.Id, Status = VerifyStatus.Pending });
+            VerifyRequest request = await _verifyRequestRepository.Get(vr => vr.AppUserId  == user.Id, isTracking:true, includes:"AppUser");
+            if (request is not null && request.Status != VerifyStatus.Canceled)
+                throw new UserAlreadyExistException("You already have a request for verify!");
+            if (request is not null && request.Status == VerifyStatus.Canceled)
+            {
+                request.Status = VerifyStatus.Pending;
+            } 
+            else
+            {
+                await _verifyRequestRepository.CreateAsync(new VerifyRequest { AppUserId = user.Id, Status = VerifyStatus.Pending });
+            }
             await _verifyRequestRepository.SaveChangesAsync();
         }
   
