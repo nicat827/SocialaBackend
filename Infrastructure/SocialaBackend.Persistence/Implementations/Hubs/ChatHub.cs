@@ -73,10 +73,15 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             }
 
         }
-        public async Task SetTypingStatus(string userName, bool status)
+        public async Task AddTypingUser(string reciever, string sender)
         {
             
-            await Clients.Group(userName).SendAsync("GetTypingStatus", status);
+            await Clients.Group(reciever).SendAsync("GetAddedTypingUser", sender);
+        }
+        public async Task DeleteTypingUser(string reciever, string sender)
+        {
+
+            await Clients.Group(reciever).SendAsync("GetDeletedTypingUser", sender);
         }
         public async Task ConnectToChat(int chatId, string userName)
         {
