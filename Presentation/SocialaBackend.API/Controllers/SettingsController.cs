@@ -75,9 +75,9 @@ namespace SocialaBackend.API.Controllers
         [HttpPut("notifications/check")]
         [Authorize]
 
-        public async Task<IActionResult> CheckNotifications([FromForm] NotificationsCheckDto dto)
+        public async Task<IActionResult> CheckNotifications([FromForm] ICollection<int> notificationsIds)
         {
-            await _service.CheckNotificationsAsync(dto.Notifications);
+            await _service.CheckNotificationsAsync(notificationsIds);
             return Ok();
         }
 

@@ -56,6 +56,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             };
 
             FileType type = _fileService.ValidateFilesForPost(dto.File);
+            _fileService.CheckFileSize(dto.File, 150);
             string url = await _fileService.CreateFileAsync(dto.File, "uploads", "stories");
             string cloudinaryUrl = await _cloudinaryService.UploadFileAsync(url, type, "uploads", "stories");
             newStoryItem.SourceUrl = cloudinaryUrl;

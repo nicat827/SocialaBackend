@@ -96,8 +96,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 CreatedAt = DateTime.Now,
                 Type = newNotification.Type.ToString()
             };
-            await _hubContext.Clients.Group(follower.UserName).SendAsync("NewNotification", notificationDto);
             await _notificationRepository.CreateAsync(newNotification);
+            await _notificationRepository.SaveChangesAsync();
+            await _hubContext.Clients.Group(follower.UserName).SendAsync("NewNotification", notificationDto);
             await _userManager.UpdateAsync(user);
             await _userManager.UpdateAsync(follower);
         }
@@ -201,8 +202,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Type = NotificationType.Custom,
                 UserName = follower.UserName
             };
+            await _notificationRepository.CreateAsync(newNotification);
+            await _notificationRepository.SaveChangesAsync();
             NotificationsGetDto notificationDto = new()
             {
+                Id = newNotification.Id,
                 UserName = newNotification.UserName,
                 Title = newNotification.Title,
                 IsChecked = false,
@@ -213,8 +217,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             };
             await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
-            await _notificationRepository.CreateAsync(newNotification);
-            await _notificationRepository.SaveChangesAsync();
             await _userManager.UpdateAsync(user);
             return _mapper.Map<FollowGetDto>(followItem);
 
@@ -426,10 +428,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Type = NotificationType.Congrat,
                 UserName = user.UserName
             };
-            NotificationsGetDto notify  = new() { IsChecked = false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title, Type = newNotification.Type.ToString()};
-            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
+            NotificationsGetDto notify  = new() {Id=newNotification.Id, IsChecked = false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title, Type = newNotification.Type.ToString()};
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
+            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);
             TokenResponseDto tokens = await _tokenService.GenerateTokensAsync(user, false);
             user.RefreshToken = tokens.RefreshToken;
             user.RefreshTokenExpiresAt = tokens.RefreshTokenExpiresAt;
@@ -477,10 +479,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 UserName = user.UserName,
                 
             };
-            NotificationsGetDto notify = new() {IsChecked=false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title,Type = newNotification.Type.ToString() };
-            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);    
             await _notificationRepository.CreateAsync(newNotification);
             await _notificationRepository.SaveChangesAsync();
+            NotificationsGetDto notify = new() {Id=newNotification.Id, IsChecked=false, UserName = user.UserName, CreatedAt = DateTime.Now, Title = newNotification.Title, Text = newNotification.Title,Type = newNotification.Type.ToString() };
+            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notify);    
 
         }
 

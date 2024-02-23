@@ -186,9 +186,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         Type = NotificationType.Custom,
                         UserName = currentUser.UserName,
                     };
-                    NotificationsGetDto dto = new() { IsChecked = false, UserName = newNotification.UserName, Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
-                    await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
                     await _notificationRepository.CreateAsync(newNotification);
+                    await _notificationRepository.SaveChangesAsync();
+                    NotificationsGetDto dto = new() {Id = newNotification.Id, IsChecked = false, UserName = newNotification.UserName, Title = newNotification.Title, Text = newNotification.Text, SourceUrl = newNotification.SourceUrl, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
+                    await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", dto);
                        
                 }
             }
@@ -210,8 +211,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
             foreach (int id in notificationsIds)
             {
                 Notification notification = await _notificationRepository.GetByIdAsync(id, true);
-                notification.IsChecked = true;
-                await _notificationRepository.SaveChangesAsync();
+                if (notification is not null)
+                {
+                    notification.IsChecked = true;
+                    await _notificationRepository.SaveChangesAsync();
+                }
             }
 
         }

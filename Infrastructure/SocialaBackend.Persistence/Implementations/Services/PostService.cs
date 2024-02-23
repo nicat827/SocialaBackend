@@ -92,9 +92,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     SrcId = post.Id,
                     UserName = user.UserName,
                 };
-                NotificationsGetDto notificationDto = new() { IsChecked = false, SrcId = newNotification.SrcId, UserName = newNotification.UserName, SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
-                await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification", notificationDto);
                 await _notificationRepository.CreateAsync(newNotification);
+                await _notificationRepository.SaveChangesAsync();
+                NotificationsGetDto notificationDto = new() {Id= newNotification.Id, IsChecked = false, SrcId = newNotification.SrcId, UserName = newNotification.UserName, SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString() };
+                await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification", notificationDto);
             }
             post.Comments.Add(newComment);
             post.CommentsCount++;
@@ -377,9 +378,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         UserName = user.UserName,
                         
                     };
-                    NotificationsGetDto dto = new() { IsChecked = false, SrcId = newNotification.SrcId, UserName = newNotification.UserName, SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString()};
-                    await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification",  dto);
                     await _notificationRepository.CreateAsync(newNotification);
+                    await _notificationRepository.SaveChangesAsync();
+                    NotificationsGetDto dto = new() {Id=newNotification.Id, IsChecked = false, SrcId = newNotification.SrcId, UserName = newNotification.UserName, SourceUrl = newNotification.SourceUrl, Title = newNotification.Title, Text = newNotification.Text, CreatedAt = DateTime.Now, Type = newNotification.Type.ToString()};
+                    await _notificationHubContext.Clients.Group(post.AppUser.UserName).SendAsync("NewNotification",  dto);
                 }
             }
             else
