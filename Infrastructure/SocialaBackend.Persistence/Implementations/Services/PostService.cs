@@ -80,7 +80,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = dto.Text,
                 AuthorId = user.Id,
             };
-            if (user.PostCommentNotify && user.UserName != post.AppUser.UserName)
+            if (post.AppUser.PostCommentNotify && user.UserName != post.AppUser.UserName)
             {
                 Notification newNotification = new Notification
                 {
@@ -365,7 +365,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 AppUser user = await _getUser(_currentUserName);
                 post.Likes.Add(new PostLikeItem { LikedUserId = user.Id});
                 post.LikesCount++;
-                if (user.PostLikeNotify && user.UserName != post.AppUser.UserName)
+                if (post.AppUser.PostLikeNotify && user.UserName != post.AppUser.UserName)
                 {
                     Notification newNotification = new Notification
                     {

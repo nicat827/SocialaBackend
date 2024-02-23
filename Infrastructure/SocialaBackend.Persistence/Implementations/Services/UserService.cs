@@ -193,30 +193,34 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 UserName = follower.UserName,
                 IsConfirmed = user.IsPrivate ? false : true
             });
-            Notification newNotification = new Notification
+            if (user.FollowerNotify)
             {
-                AppUser = user,
-                Title = "New Follow!",
-                Text = user.IsPrivate ? $"{follower.UserName} sent to you follow request" : $"{follower.UserName} followed to you",
-                SourceUrl = follower.ImageUrl,
-                Type = NotificationType.Custom,
-                UserName = follower.UserName
-            };
-            await _notificationRepository.CreateAsync(newNotification);
-            await _notificationRepository.SaveChangesAsync();
-            NotificationsGetDto notificationDto = new()
-            {
-                Id = newNotification.Id,
-                UserName = newNotification.UserName,
-                Title = newNotification.Title,
-                IsChecked = false,
-                Text = newNotification.Text,
-                SourceUrl = newNotification.SourceUrl,
-                CreatedAt = DateTime.Now,
-                Type = newNotification.Type.ToString()      
+                Notification newNotification = new Notification
+                {
+                    AppUser = user,
+                    Title = "New Follow!",
+                    Text = user.IsPrivate ? $"{follower.UserName} sent to you follow request" : $"{follower.UserName} followed to you",
+                    SourceUrl = follower.ImageUrl,
+                    Type = NotificationType.Custom,
+                    UserName = follower.UserName
+                };
+                await _notificationRepository.CreateAsync(newNotification);
+                await _notificationRepository.SaveChangesAsync();
+                NotificationsGetDto notificationDto = new()
+                {
+                    Id = newNotification.Id,
+                    UserName = newNotification.UserName,
+                    Title = newNotification.Title,
+                    IsChecked = false,
+                    Text = newNotification.Text,
+                    SourceUrl = newNotification.SourceUrl,
+                    CreatedAt = DateTime.Now,
+                    Type = newNotification.Type.ToString()      
 
-            };
-            await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
+                };
+                await _hubContext.Clients.Group(user.UserName).SendAsync("NewNotification", notificationDto);
+
+            }
             await _userManager.UpdateAsync(user);
             return _mapper.Map<FollowGetDto>(followItem);
 
