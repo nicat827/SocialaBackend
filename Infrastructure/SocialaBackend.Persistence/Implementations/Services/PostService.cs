@@ -84,7 +84,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 Notification newNotification = new Notification
                 {
-                    AppUser = user,
+                    AppUser = owner,
                     Title = "Post Commented!",
                     Text = $"{user.UserName} commented your post!",
                     SourceUrl = user.ImageUrl,
@@ -321,30 +321,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<IEnumerable<PostGetDto>> GetFeedPostsAsync(int skip)
         {
-            AppUser? user = await _userManager.Users
-             .Where(u => u.UserName == _currentUserName)
-                 .Include(u => u.Follows.Where(uf => uf.IsConfirmed == true))
-             .FirstOrDefaultAsync();
-            ICollection<PostGetDto> dto = new List<PostGetDto>();
-            foreach (FollowItem userFollow in user.Follows)
-            {
-                ICollection<Post> followPosts = await _postRepository.OrderAndGet(
+            ICollection<Post> posts = await _postRepository.OrderAndGet
+                (
                     order: p => p.CreatedAt,
                     isDescending: true,
-                    expression: p => p.AppUser.UserName == userFollow.UserName,
+                    expression: p => p.AppUser.Followers.Any(f => f.UserName == _currentUserName),
                     skip: skip,
                     limit: 10,
                     expressionIncludes: p=> p.Comments.Take(5),
-                    includes:new[] { "AppUser", "Items", "Comments.Author" }).ToListAsync();
-                if (followPosts is not null)
-                {
-                    foreach (Post followPost in followPosts) dto.Add(_mapper.Map<PostGetDto>(followPost));
-                }
-
-               
-            }
-            IEnumerable<PostGetDto> sortedDto = dto.OrderByDescending(p => p.CreatedAt);
-            return sortedDto;
+                    includes: new[] { "Items","AppUser", "AppUser.Followers", "Comments.Author" }
+                ).ToListAsync();
+            return _mapper.Map<IEnumerable<PostGetDto>>(posts);
 
         }
 

@@ -32,6 +32,8 @@ namespace SocialaBackend.Persistence.DAL
         public DbSet<PostLikeItem> PostLikeItems { get; set; }
         public DbSet<CommentLikeItem> CommentLikeItems { get; set; }
         public DbSet<PostItem> PostItems { get; set; }
+        public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupMessage> GroupMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

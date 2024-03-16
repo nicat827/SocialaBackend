@@ -27,6 +27,7 @@
     <Folder Include="wwwroot\uploads\users\backgrounds\" />
     <Folder Include="wwwroot\uploads\stories\" />
     <Folder Include="wwwroot\uploads\chats\" />
+    <Folder Include="wwwroot\uploads\groups\" />
   </ItemGroup>
 
 </Project>

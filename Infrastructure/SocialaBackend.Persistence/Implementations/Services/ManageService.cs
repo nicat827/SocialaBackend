@@ -78,7 +78,20 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
             foreach (string role in await _userManager.GetRolesAsync(user))
             {
-                if (!roles.Any(r => r.ToString() == role)) await _userManager.RemoveFromRoleAsync(user, role);
+                if (!roles.Any(r => r.ToString() == role))
+                {
+                    await _userManager.RemoveFromRoleAsync(user, role);
+                    if (role == UserRole.Verified.ToString())
+                    {
+                        VerifyRequest req = await _verifyRequestRepository.Get(v => v.AppUser.UserName == userName, isTracking:true, includes:"AppUser");
+                        if (req is not null)
+                        {
+                            _verifyRequestRepository.Delete(req);
+                            await _verifyRequestRepository.SaveChangesAsync();
+    
+                        }
+                    }
+                }
             }
             foreach (UserRole role in roles)
             {
@@ -152,7 +165,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             VerifyRequest? request = await _verifyRequestRepository.GetByIdAsync(id, true, includes:"AppUser");
             if (request is null) throw new NotFoundException($"Verify request with id {id} wasnt found!");
             request.Status = status ? VerifyStatus.Verified : VerifyStatus.Canceled;
-
+            if (request.Status == VerifyStatus.Verified) await _userManager.AddToRoleAsync(request.AppUser, VerifyStatus.Verified.ToString());
             Notification newNotification = new Notification
             {
                 AppUser = request.AppUser,

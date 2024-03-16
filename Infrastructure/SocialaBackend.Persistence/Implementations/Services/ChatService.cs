@@ -311,6 +311,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName)
         {
+            if (!await _userManager.Users.AnyAsync(u => u.UserName == userName)) throw new AppUserNotFoundException($"User with username {userName} doesnt exists!");
             ICollection<Chat> userChats = await _chatRepository.OrderAndGet(
                 order: c => c.LastMessageSendedAt,
                 isDescending: true,

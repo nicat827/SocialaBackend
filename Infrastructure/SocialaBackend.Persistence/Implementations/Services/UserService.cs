@@ -244,6 +244,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<CurrentAppUserGetDto> GetCurrentUserAsync()
         {
+            Console.BackgroundColor = ConsoleColor.Red;
+            Console.WriteLine("STARTED");
+            Console.ResetColor();
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUserName)
                 .Include(u => u.Story)
@@ -253,18 +256,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.Followers)
                 .Include(u => u.LikedReplies)
                 .Include(u => u.LikedPosts)
-                    .ThenInclude(lp => lp.Post)
                 .Include(u => u.LikedComments)
                 .Include(u => u.WatchedStoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
-                    .ThenInclude(ws => ws.StoryItem)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} wasnt defined!");
             
             CurrentAppUserGetDto dto = _mapper.Map<CurrentAppUserGetDto>(user);
             dto.Roles = await _userManager.GetRolesAsync(user);
-            dto.LikedPostsIds= new List<int>();
-            
-            foreach (Post post in user.LikedPosts.Select(l => l.Post)) dto.LikedPostsIds.Add(post.Id);
+            dto.LikedPostsIds = user.LikedPosts.Select(lp => lp.PostId).ToList();
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
             dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
@@ -272,6 +271,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.LastStoryPostedAt = user.Story.LastItemAddedAt;
             dto.WatchedStoryItemsIds = user.WatchedStoryItems.Select(si => si.StoryItemId).ToList();
             dto.CanSendVerifyRequest = user.VerifyRequest is null || user.VerifyRequest.Status == VerifyStatus.Canceled ? true : false;
+            Console.BackgroundColor = ConsoleColor.Red;
+            Console.WriteLine("ENDED");
+            Console.ResetColor();
             return dto;
         }
         public async Task<bool> IsPrivateAsync(string username)

@@ -80,11 +80,11 @@ namespace SocialaBackend.Infrastructure.Implementations
             throw new FileValidationException("Unsupported file type!");
            
         }
-        public async Task<string> CreateFileFromBytesAsync(byte[] bytes, string fileName, params string[] folders)
+        public async Task<string> CreateFileFromBytesAsync(ICollection<byte> bytes, string fileName, params string[] folders)
         {
             string newFileName = Guid.NewGuid().ToString()+ fileName.Substring(fileName.LastIndexOf("."));
             string path = GeneratePath(newFileName, folders);
-            await File.WriteAllBytesAsync(path, bytes);
+            await File.WriteAllBytesAsync(path, bytes.ToArray());
             return newFileName;
         }
         public void DeleteFile(string fileName, params string[] folders)

@@ -9,12 +9,10 @@ using System.Threading.Tasks;
 namespace SocialaBackend.Domain.Enums
 {
     [JsonConverter(typeof(StringEnumConverter))]
-
-    public enum NotificationType
+    public enum GroupRole
     {
-        System,
-        Congrat,
-        Custom,
-        Chat
+        Member,
+        Admin,
+        Owner
     }
 }

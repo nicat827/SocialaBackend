@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialaBackend.Persistence.DAL;
 
@@ -11,9 +12,10 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240303041408_GroupMessageWatcherCreated")]
+    partial class GroupMessageWatcherCreated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -428,41 +430,15 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
-
-                    b.ToTable("Groups");
-                });
-
-            modelBuilder.Entity("SocialaBackend.Domain.Entities.GroupMemberItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("AppUserId")
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId");
+                    b.HasIndex("OwnerId");
 
-                    b.HasIndex("GroupId");
-
-                    b.ToTable("GroupMemberItem");
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.GroupMessage", b =>
@@ -933,6 +909,12 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Property<string>("GithubLink")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GroupId1")
+                        .HasColumnType("int");
+
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -1002,6 +984,10 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("GroupId1");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -1180,21 +1166,15 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("AppUser");
                 });
 
-            modelBuilder.Entity("SocialaBackend.Domain.Entities.GroupMemberItem", b =>
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.Group", b =>
                 {
-                    b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
+                    b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "Owner")
                         .WithMany()
-                        .HasForeignKey("AppUserId");
-
-                    b.HasOne("SocialaBackend.Domain.Entities.Group", "Group")
-                        .WithMany("Members")
-                        .HasForeignKey("GroupId")
+                        .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AppUser");
-
-                    b.Navigation("Group");
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.GroupMessage", b =>
@@ -1371,6 +1351,17 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                     b.Navigation("Watcher");
                 });
 
+            modelBuilder.Entity("SocialaBackend.Domain.Entities.User.AppUser", b =>
+                {
+                    b.HasOne("SocialaBackend.Domain.Entities.Group", null)
+                        .WithMany("Admins")
+                        .HasForeignKey("GroupId");
+
+                    b.HasOne("SocialaBackend.Domain.Entities.Group", null)
+                        .WithMany("Members")
+                        .HasForeignKey("GroupId1");
+                });
+
             modelBuilder.Entity("SocialaBackend.Domain.Entities.VerifyRequest", b =>
                 {
                     b.HasOne("SocialaBackend.Domain.Entities.User.AppUser", "AppUser")
@@ -1396,6 +1387,8 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
             modelBuilder.Entity("SocialaBackend.Domain.Entities.Group", b =>
                 {
+                    b.Navigation("Admins");
+
                     b.Navigation("Members");
 
                     b.Navigation("Messages");

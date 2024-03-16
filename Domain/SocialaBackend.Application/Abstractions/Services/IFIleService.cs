@@ -19,7 +19,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         
         Task<string> CreateFileAsync(IFormFile file, params string[] folders);
 
-        Task<string> CreateFileFromBytesAsync(byte[] bytes, string fileName, params string[] folders);
+        Task<string> CreateFileFromBytesAsync(ICollection<byte> bytes, string fileName, params string[] folders);
         void DeleteFile(string fileName, params string[] folders);
     }
 }
