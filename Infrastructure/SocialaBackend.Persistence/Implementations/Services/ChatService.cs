@@ -54,6 +54,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 throw new DontHavePermissionException("You cant get this chat!");
             var firstUser = chat.FirstUser;
             //var messages = chat.Messages.OrderByDescending(m => m.CreatedAt);
+            
             return new ChatGetDto
             {
                 Id = chat.Id,
@@ -191,7 +192,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 Text = dto.Text,
                 Sender = dto.Sender,
-                ChatId = chat.Id
+                ChatId = chat.Id,
+                CreatedAt = DateTime.UtcNow
+                
             };
             //bool exceptionCatched = false;
             //bool isSucceedUpload = false;

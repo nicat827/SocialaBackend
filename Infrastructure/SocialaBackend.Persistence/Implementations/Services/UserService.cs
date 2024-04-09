@@ -242,11 +242,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return dto;
         }
 
+       
+       
         public async Task<CurrentAppUserGetDto> GetCurrentUserAsync()
         {
-            Console.BackgroundColor = ConsoleColor.Red;
-            Console.WriteLine("STARTED");
-            Console.ResetColor();
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUserName)
                 .Include(u => u.Story)
@@ -261,8 +260,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} wasnt defined!");
             
+            var roles = await _userManager.GetRolesAsync(user);
             CurrentAppUserGetDto dto = _mapper.Map<CurrentAppUserGetDto>(user);
-            dto.Roles = await _userManager.GetRolesAsync(user);
+            dto.Roles = roles;
             dto.LikedPostsIds = user.LikedPosts.Select(lp => lp.PostId).ToList();
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
             dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
@@ -270,7 +270,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.StoryId = user.Story.Id;
             dto.LastStoryPostedAt = user.Story.LastItemAddedAt;
             dto.WatchedStoryItemsIds = user.WatchedStoryItems.Select(si => si.StoryItemId).ToList();
-            dto.CanSendVerifyRequest = user.VerifyRequest is null || user.VerifyRequest.Status == VerifyStatus.Canceled ? true : false;
+            dto.CanSendVerifyRequest = roles.Contains(UserRole.Admin.ToString()) ?
+                false :
+                user.VerifyRequest is null || user.VerifyRequest.Status == VerifyStatus.Canceled ? true : false;
             Console.BackgroundColor = ConsoleColor.Red;
             Console.WriteLine("ENDED");
             Console.ResetColor();
@@ -455,7 +457,13 @@ namespace SocialaBackend.Persistence.Implementations.Services
             var validResetToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(resetToken));
             string url = $"http://localhost:5173/reset?token={validResetToken}&email={user.Email}";
             string body = $"<body>\r\n    <div style=\"margin: 0; padding: 0; font-family: Arial, sans-serif; background-image: url('https://marketplace.canva.com/EAFcuA4ZUpk/1/0/1600w/canva-beige-pastel-terrazzo-abstract-desktop-wallpaper-rtHx0Wpl5Oc.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; justify-content: center; align-items: center; flex-direction: column; height: 100vh; width: 100vw;\">\r\n      <div class=\"container\" style=\"text-align: center; background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);\">\r\n        <img src=\"https://demo.foxthemes.net/socialite-v3.0/assets/images/logo.png\" alt=\"Logo\" class=\"logo\" style=\"width: 100px; height: auto; margin-bottom: 20px;\">\r\n        <h2 style=\"color: rgb(88,80,236)\">Welcome To Socialite!</h2>\r\n        <div class=\"confirmation-message\" style=\"font-size: 24px; margin-bottom: 20px;\">\r\n          Forgot password? No problem! Click the button and set a new one :)\r\n        </div>\r\n        <img style=\"width: 350px; height:150px\" src=\"https://sendgrid.com/content/dam/sendgrid/legacy/2019/12/confirmation-email-examples.png\" alt=\"\">\r\n        <div style=\"display: flex; justify-content: center; align-items: center; \">\r\n            <div class=\"social-media-icons\" style=\"margin-left:255px;margin-top: 20px; padding: 5px 10px; border-radius:8px; background-color: rgb(88,80,236); width: 150px; cursor:'pointer' \">\r\n              <a href='{url}' style=\" display: inline-block; margin: 0 10px;text-decoration: none;color: rgba(255, 255, 255, 0.8); transition: transform 0.3s ease;\">click to reset password!</a>\r\n            </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n</body>";
+            if (!user.EmailConfirmed)
+            {
+                user.EmailConfirmed = true;
+                await _userManager.UpdateAsync(user);
+            }
             await _emailService.SendEmailAsync(user.Email, body, "Change Password", true);
+
 
         }
 

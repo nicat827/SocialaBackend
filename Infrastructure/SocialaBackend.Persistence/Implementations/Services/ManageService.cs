@@ -13,6 +13,7 @@ using SocialaBackend.Domain.Enums;
 using SocialaBackend.Persistence.Implementations.Hubs;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -26,21 +27,25 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly INotificationRepository _notificationRepository;
         private readonly IVerifyRequestRepository _verifyRequestRepository;
         private readonly UserManager<AppUser> _userManager;
+        private readonly ITokenService _tokenService;
         private readonly RoleManager<IdentityRole> _roleManager;
         private string _currentUserName;
 
         public ManageService(
+
             IHttpContextAccessor http,
             IHubContext<NotificationHub> hubContext,
             INotificationRepository notificationRepository,
             IVerifyRequestRepository verifyRequestRepository,
             UserManager<AppUser> userManager,
+            ITokenService tokenService,
             RoleManager<IdentityRole> roleManager)
         {
             _hubContext = hubContext;
             _notificationRepository = notificationRepository;
             _verifyRequestRepository = verifyRequestRepository;
             _userManager = userManager;
+            _tokenService = tokenService;
             _roleManager = roleManager;
             _currentUserName = http.HttpContext.User.Identity.Name;
         }
@@ -72,15 +77,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return dto;
         }
 
-        public async Task ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles)
+        public async Task<string?> ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles)
         {
             AppUser? user = await _userManager.FindByNameAsync(userName);
             if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
+            bool hasChanges = false;
+            string? accessToken = null;
             foreach (string role in await _userManager.GetRolesAsync(user))
             {
                 if (!roles.Any(r => r.ToString() == role))
                 {
                     await _userManager.RemoveFromRoleAsync(user, role);
+                    if (!hasChanges) hasChanges = true;
                     if (role == UserRole.Verified.ToString())
                     {
                         VerifyRequest req = await _verifyRequestRepository.Get(v => v.AppUser.UserName == userName, isTracking:true, includes:"AppUser");
@@ -108,9 +116,19 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         await _verifyRequestRepository.SaveChangesAsync();
                     }
                     await _userManager.AddToRoleAsync(user, role.ToString());
+                    if (!hasChanges) hasChanges = true;
+
                 }
 
             }
+            if (hasChanges)
+            {
+                //(accessToken, DateTime validTo) = await _tokenService.GenerateAccessTokenAsync(user);
+
+            }
+            return accessToken;
+
+
           
         }
         public async Task<IEnumerable<VerifyRequestGetDto>> GetVerifyRequestsAsync(string sortType, bool desc, int skip)

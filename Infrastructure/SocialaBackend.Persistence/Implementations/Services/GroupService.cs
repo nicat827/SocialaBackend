@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
@@ -21,6 +22,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class GroupService:IGroupService
     {
+        private readonly ILogger<GroupService> _logger;
         private readonly IHubContext<NotificationHub> _notificationHub;
         private readonly INotificationRepository _notificationRepository;
         private readonly IHubContext<ChatHub> _chatHub;
@@ -31,8 +33,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IFileService _fileService;
         private readonly ICloudinaryService _cloudinaryService;
 
-        public GroupService(IHubContext<NotificationHub> notificationHub, INotificationRepository notificationRepository, IHubContext<ChatHub> chatHub, IGroupMessageRepository groupMessageRepository, IMapper mapper, IGroupRepository groupRepository, UserManager<AppUser> userManager, IFileService fileService, ICloudinaryService cloudinaryService)
+        public GroupService(ILogger<GroupService> logger, IHubContext<NotificationHub> notificationHub, INotificationRepository notificationRepository, IHubContext<ChatHub> chatHub, IGroupMessageRepository groupMessageRepository, IMapper mapper, IGroupRepository groupRepository, UserManager<AppUser> userManager, IFileService fileService, ICloudinaryService cloudinaryService)
         {
+            _logger = logger;
             _notificationHub = notificationHub;
             _notificationRepository = notificationRepository;
             _chatHub = chatHub;
@@ -99,6 +102,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<ICollection<GroupItemGetDto>> GetGroupItemsAsync(string userName)
         {
             if (!await _userManager.Users.AnyAsync(u => u.UserName == userName)) throw new AppUserNotFoundException($"User with username {userName} doesnt exists!");
+            _logger.LogInformation("Do zaprosa");
             ICollection<Group> userGroups = await _groupRepository.OrderAndGet
                 (
                     order: g => g.LastMessageSendedAt,
@@ -108,31 +112,34 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     includes: new[] { "Members", "Members.AppUser", "Messages.CheckedUsers", "Messages.CheckedUsers.AppUser" }
                 ).ToListAsync();
             ICollection<GroupItemGetDto> dto = new List<GroupItemGetDto>();
-            foreach (Group group in userGroups)
+            if (userGroups is not null)
             {
-                dto.Add(new GroupItemGetDto
+                foreach (var group in userGroups)
                 {
-                    GroupId = group.Id,
-                    Name = group.Name,
-                    ImageUrl = group.ImageUrl,
-                    LastMessage = group.LastMessage,
-                    LastMessageIsChecked = group.LastMessageIsChecked,
-                    LastMessageSendedAt = group.LastMessageSendedAt,
-                    LastMessageSendedBy = group.LastMessageSendedBy,
-                    UnreadedMessagesCount = group.Messages.Count
-                });
+                    _logger.LogInformation(group.Name, userGroups.Count);
+
+                }
+                _logger.LogInformation(userGroups.Count.ToString());
+                foreach (Group group in userGroups)
+                {
+                    dto.Add(new GroupItemGetDto
+                    {
+                        GroupId = group.Id,
+                        Name = group.Name,
+                        ImageUrl = group.ImageUrl,
+                        LastMessage = group.LastMessage,
+                        LastMessageIsChecked = group.LastMessageIsChecked,
+                        LastMessageSendedAt = group.LastMessageSendedAt,
+                        LastMessageSendedBy = group.LastMessageSendedBy,
+                        UnreadedMessagesCount = group.Messages.Count
+                    });
+                }
+
             }
             return dto;
         }
 
-        public async Task RemoveMemberFromGroupAsync(int groupId, string removeableUserName, string removedBy)
-        {
-            
-            
-
-
-
-        }
+       
 
         public async Task DeleteMessageAsync(int id, string userName)
         {

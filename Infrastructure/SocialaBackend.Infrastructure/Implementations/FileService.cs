@@ -15,10 +15,10 @@ namespace SocialaBackend.Infrastructure.Implementations
 {
     internal class FileService : IFileService
     {
-        private readonly string _rootPath;
+        private readonly IWebHostEnvironment _env;
         public FileService(IWebHostEnvironment env)
         {
-            _rootPath = env.WebRootPath;
+            _env = env;
 
         }
         public void CheckFileType(IFormFile file, FileType type)
@@ -94,7 +94,7 @@ namespace SocialaBackend.Infrastructure.Implementations
         }
         public string GeneratePath(string fileName, params string[] folders)
         {
-            string path = _rootPath;
+            string path = _env.WebRootPath;
             foreach (var folder in folders)
             {
                 path = Path.Combine(path, folder);

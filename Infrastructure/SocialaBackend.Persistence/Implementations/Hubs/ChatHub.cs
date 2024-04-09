@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SocialaBackend.Application.Abstractions.Hubs;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
@@ -25,6 +26,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 {
     public class ChatHub:Hub
     {
+        private readonly ILogger _logger;
         private readonly INotificationRepository _notificationRepository;
         private readonly IHubContext<NotificationHub> _notificationHub;
         private readonly UserManager<AppUser> _userManager;
@@ -37,8 +39,9 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
         private static Dictionary<string, ICollection<(string,int)>> Chats = new Dictionary<string, ICollection<(string,int)>>();
         private static Dictionary<string, ICollection<(string,int)>> _groups = new Dictionary<string, ICollection<(string,int)>>();
-        public ChatHub(INotificationRepository notificationRepository, IHubContext<NotificationHub> notificationHub, UserManager<AppUser> userManager, IGroupMessageRepository groupMessageRepository, IGroupService groupService, IGroupRepository groupRepository, IMessageRepository messageRepository, IChatRepository chatRepository, IChatService chatService)
+        public ChatHub(ILogger<ChatHub> logger, INotificationRepository notificationRepository, IHubContext<NotificationHub> notificationHub, UserManager<AppUser> userManager, IGroupMessageRepository groupMessageRepository, IGroupService groupService, IGroupRepository groupRepository, IMessageRepository messageRepository, IChatRepository chatRepository, IChatService chatService)
         {
+            _logger = logger;
             _notificationRepository = notificationRepository;
             _notificationHub = notificationHub;
             _userManager = userManager;
@@ -51,7 +54,9 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         }
         public async Task ConnectToChatSockets(string userName)
         {
+            _logger.LogWarning(userName);
             ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(userName);
+
             await Groups.AddToGroupAsync(Context.ConnectionId, userName);
             //if (!GroupCount.ContainsKey(_currentUserName)) GroupCount[_currentUserName] = 1;
             //else GroupCount[_currentUserName] = GroupCount[_currentUserName] + 1;
@@ -62,14 +67,13 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         }
         public async Task ConnectToGroupSockets(string userName)
         {
-            Console.BackgroundColor = ConsoleColor.Green;
-            Console.WriteLine(Context.ConnectionId, " " , userName);
-            Console.ResetColor();
-            IEnumerable<GroupItemGetDto> userGroupItems = await _groupService.GetGroupItemsAsync(userName);
+            _logger.LogWarning(userName);
+            ICollection<GroupItemGetDto> userGroupItems = await _groupService.GetGroupItemsAsync(userName);
+
+            int count = await _chatRepository.GetCountAsync(c => c.FirstUser.UserName == userName || c.SecondUser.UserName == userName, "SecondUser", "FirstUser");
             await Groups.AddToGroupAsync(Context.ConnectionId, userName);
             //if (!GroupCount.ContainsKey(_currentUserName)) GroupCount[_currentUserName] = 1;
             //else GroupCount[_currentUserName] = GroupCount[_currentUserName] + 1;
-            int count = await _chatRepository.GetCountAsync(c => c.FirstUser.UserName == userName || c.SecondUser.UserName == userName, "SecondUser", "FirstUser");
 
             await Clients.Client(Context.ConnectionId).SendAsync("GetGroupItems", userGroupItems);
             await Clients.Client(Context.ConnectionId).SendAsync("GetChatsCount", count);

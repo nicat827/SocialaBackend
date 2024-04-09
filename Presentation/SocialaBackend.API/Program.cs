@@ -7,6 +7,8 @@ using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using SocialaBackend.Persistence.Implementations.Hubs;
+using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.Extensions.Logging.AzureAppServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +20,13 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
     opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
 {
-    
-    build.WithOrigins("http://localhost:7023").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    build.WithOrigins("https://app-socialite-eastus-dev-001.azurewebsites.net").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    build.WithOrigins("https://signalr-socialite-eastus-dev-001.service.signalr.net").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    build.WithOrigins("http://localhost:5173").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    build.WithOrigins("https://socialite-827.netlify.app").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 }));
 
 
@@ -57,7 +60,15 @@ builder.Services.AddSwaggerGen(opt =>
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR();//.AddAzureSignalR();
+
+//builder.Logging.AddAzureWebAppDiagnostics();
+//builder.Services.Configure<AzureFileLoggerOptions>(opt =>
+//{
+//    opt.FileName = "logs-";
+//    opt.FileSizeLimit = 50 * 1024;
+//    opt.RetainedFileCountLimit = 5;
+//});
 
 var app = builder.Build();
 
@@ -89,7 +100,12 @@ app.UseAuthorization();
 app.AddPersistenceConfigure();
 
 app.MapControllers();
+
+
+
 app.MapHub<NotificationHub>("/notificationHub");
 app.MapHub<ChatHub>("/chatHub");
+
+
 
 app.Run();

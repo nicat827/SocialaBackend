@@ -325,7 +325,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 (
                     order: p => p.CreatedAt,
                     isDescending: true,
-                    expression: p => p.AppUser.Followers.Any(f => f.UserName == _currentUserName),
+                    expression: p => p.AppUser.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed),
                     skip: skip,
                     limit: 10,
                     expressionIncludes: p=> p.Comments.Take(5),

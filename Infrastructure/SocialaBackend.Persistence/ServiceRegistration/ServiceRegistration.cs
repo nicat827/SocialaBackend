@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.WebSockets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.Extensions.Logging;
 using ProniaOnion.Persistence.DAL;
 using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
@@ -65,6 +67,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<IManageService, ManageService>();
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<AppDbContextInitializer>();
+
         }
 
         public static void AddPersistenceConfigure(this IApplicationBuilder app)

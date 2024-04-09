@@ -26,7 +26,7 @@ namespace SocialaBackend.Infrastructure.Implementations
             _userManager = userManager;
             _configuration = configuration;
         }
-        public async Task<TokenResponseDto> GenerateTokensAsync(AppUser user, bool isPersistence)
+        public async Task<(string, DateTime)> GenerateAccessTokenAsync(AppUser user)
         {
             ICollection<Claim> claims = new List<Claim>
             {
@@ -44,7 +44,6 @@ namespace SocialaBackend.Infrastructure.Implementations
             }
             SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecurityKey"]));
             SigningCredentials signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             JwtSecurityToken token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
@@ -54,15 +53,19 @@ namespace SocialaBackend.Infrastructure.Implementations
                 signingCredentials: signingCredentials
 
             );
-
-            string refreshToken = Guid.NewGuid().ToString();
-            
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             string accessToken = tokenHandler.WriteToken(token);
+            return (accessToken, token.ValidTo);
+        }
+        public async Task<TokenResponseDto> GenerateTokensAsync(AppUser user, bool isPersistence)
+        {
+            string refreshToken = Guid.NewGuid().ToString();
+            (string accessToken, DateTime validTo) = await GenerateAccessTokenAsync(user);
             return new TokenResponseDto(
                 accessToken,
-                token.ValidTo,
+                validTo,
                 refreshToken,
-                isPersistence ? token.ValidTo.AddDays(7) : token.ValidFrom.AddMinutes(30) 
+                isPersistence ? validTo.AddDays(7) : validTo.AddMinutes(30) 
             );
         }
     }

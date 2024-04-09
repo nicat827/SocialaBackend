@@ -14,7 +14,6 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<IEnumerable<GroupMessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);
         Task DeleteMessageAsync(int id, string userName);
         Task<GroupGetDto> GetGroupByIdAsync(int id, string userName);
-        Task RemoveMemberFromGroupAsync(int groupId, string removeableUserName, string removedBy);
         Task<GroupMessageGetDto> SendMessageAsync(GroupMessagePostDto dto);
     }
 }
