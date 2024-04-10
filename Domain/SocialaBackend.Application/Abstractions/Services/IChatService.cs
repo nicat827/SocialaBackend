@@ -17,6 +17,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ChatDeleteGetDto> DeleteMessageAsync(int id, string userName);
         Task<ChatGetDto> GetChatByIdAsync(int id, string userName);
 
+        Task<int> GetUnreadedMessagesCountAsync(string userName);
         Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);
         Task<int> GetNewMessagesCountAsync(string userName);    
     }

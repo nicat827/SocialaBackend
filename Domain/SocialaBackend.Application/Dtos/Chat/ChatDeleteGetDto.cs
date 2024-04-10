@@ -13,6 +13,7 @@ namespace SocialaBackend.Application.Dtos
         public string FirstUserUserName { get; set; } = null!;
         public string SecondUserUserName { get; set; } = null!;
         public IEnumerable<MessageGetDto> Messages { get; set; } = new List<MessageGetDto>();
+        public bool IsDeletedMessageChecked { get; set; }
 
     }
 }

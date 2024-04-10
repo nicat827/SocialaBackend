@@ -256,7 +256,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.LikedReplies)
                 .Include(u => u.LikedPosts)
                 .Include(u => u.LikedComments)
-                .Include(u => u.WatchedStoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
+                //.Include(u => u.WatchedStoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} wasnt defined!");
             
@@ -269,7 +269,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
             dto.StoryId = user.Story.Id;
             dto.LastStoryPostedAt = user.Story.LastItemAddedAt;
-            dto.WatchedStoryItemsIds = user.WatchedStoryItems.Select(si => si.StoryItemId).ToList();
+            //dto.WatchedStoryItemsIds = user.WatchedStoryItems.Select(si => si.StoryItemId).ToList();
             dto.CanSendVerifyRequest = roles.Contains(UserRole.Admin.ToString()) ?
                 false :
                 user.VerifyRequest is null || user.VerifyRequest.Status == VerifyStatus.Canceled ? true : false;

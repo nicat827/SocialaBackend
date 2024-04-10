@@ -18,15 +18,16 @@ using SocialaBackend.Persistence.Implementations.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace SocialaBackend.Persistence.Implementations.Hubs
 {
-    public class ChatHub:Hub
+    public class MessagesHub : Hub
     {
-        private readonly ILogger _logger;
         private readonly INotificationRepository _notificationRepository;
         private readonly IHubContext<NotificationHub> _notificationHub;
         private readonly UserManager<AppUser> _userManager;
@@ -39,9 +40,9 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
         private static Dictionary<string, ICollection<(string,int)>> Chats = new Dictionary<string, ICollection<(string,int)>>();
         private static Dictionary<string, ICollection<(string,int)>> _groups = new Dictionary<string, ICollection<(string,int)>>();
-        public ChatHub(ILogger<ChatHub> logger, INotificationRepository notificationRepository, IHubContext<NotificationHub> notificationHub, UserManager<AppUser> userManager, IGroupMessageRepository groupMessageRepository, IGroupService groupService, IGroupRepository groupRepository, IMessageRepository messageRepository, IChatRepository chatRepository, IChatService chatService)
+
+        public MessagesHub(INotificationRepository notificationRepository, IHubContext<NotificationHub> notificationHub, UserManager<AppUser> userManager, IGroupMessageRepository groupMessageRepository, IGroupService groupService, IGroupRepository groupRepository, IMessageRepository messageRepository, IChatRepository chatRepository, IChatService chatService)
         {
-            _logger = logger;
             _notificationRepository = notificationRepository;
             _notificationHub = notificationHub;
             _userManager = userManager;
@@ -52,35 +53,13 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             _chatRepository = chatRepository;
             _chatService = chatService;
         }
-        public async Task ConnectToChatSockets(string userName)
+        public async Task ConnectToMessagesSockets(string userName)
         {
-            _logger.LogWarning(userName);
-            ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(userName);
-
             await Groups.AddToGroupAsync(Context.ConnectionId, userName);
-            //if (!GroupCount.ContainsKey(_currentUserName)) GroupCount[_currentUserName] = 1;
-            //else GroupCount[_currentUserName] = GroupCount[_currentUserName] + 1;
-            int count = await _groupRepository.GetCountAsync(g => g.Members.Any(m => m.AppUser.UserName == userName), "Members", "Members.AppUser");
-            await Clients.Client(Context.ConnectionId).SendAsync("GetChatItems", userChatItems);
-            await Clients.Client(Context.ConnectionId).SendAsync("GetGroupsCount", count);
-
+            //send unreaded messages count
+            int unreadedMessagesCount = await _chatService.GetUnreadedMessagesCountAsync(userName);
+            await Clients.Client(Context.ConnectionId).SendAsync("GetUnreadedMessagesCount", unreadedMessagesCount);
         }
-        public async Task ConnectToGroupSockets(string userName)
-        {
-            _logger.LogWarning(userName);
-            ICollection<GroupItemGetDto> userGroupItems = await _groupService.GetGroupItemsAsync(userName);
-
-            int count = await _chatRepository.GetCountAsync(c => c.FirstUser.UserName == userName || c.SecondUser.UserName == userName, "SecondUser", "FirstUser");
-            await Groups.AddToGroupAsync(Context.ConnectionId, userName);
-            //if (!GroupCount.ContainsKey(_currentUserName)) GroupCount[_currentUserName] = 1;
-            //else GroupCount[_currentUserName] = GroupCount[_currentUserName] + 1;
-
-            await Clients.Client(Context.ConnectionId).SendAsync("GetGroupItems", userGroupItems);
-            await Clients.Client(Context.ConnectionId).SendAsync("GetChatsCount", count);
-
-        }
-
-
         public async Task Disconnect(string userName)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, userName);
@@ -168,11 +147,18 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         {
             try
             {
-                Console.BackgroundColor = ConsoleColor.Green;
-                Console.WriteLine(Context.ConnectionId + " " + userName);
-                Console.ResetColor();
-                if (isChat) await Clients.Client(Context.ConnectionId).SendAsync("GetChatItems", await _chatService.GetChatItemsAsync(userName));
-                else await Clients.Client(Context.ConnectionId).SendAsync("GetGroupItems", await _groupService.GetGroupItemsAsync(userName));
+                if (isChat)
+                {
+                    int count = await _groupRepository.GetCountAsync(g => g.Members.Any(m => m.AppUser.UserName == userName), "Members", "Members.AppUser");
+                    await Clients.Client(Context.ConnectionId).SendAsync("GetGroupsCount", count);
+                    await Clients.Client(Context.ConnectionId).SendAsync("GetChatItems", await _chatService.GetChatItemsAsync(userName));
+                }
+                else
+                {
+                    int count = await _chatRepository.GetCountAsync(c => c.FirstUser.UserName == userName || c.SecondUser.UserName == userName, "SecondUser", "FirstUser");
+                    await Clients.Client(Context.ConnectionId).SendAsync("GetChatsCount", count);
+                    await Clients.Client(Context.ConnectionId).SendAsync("GetGroupItems", await _groupService.GetGroupItemsAsync(userName));
+                }
             }
             catch (Exception ex)
             {
@@ -194,17 +180,13 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 }
             }
             int count = 0;
-            foreach (MessageGetDto message in chat.Messages)
+            foreach (MessageGetDto message in chat.Messages.Where(m => !m.IsChecked && m.Sender != userName))
             {
-                if (message.IsChecked == false && message.Sender != userName)
-                {
                     count++;
                     message.IsChecked = true;
-                    
                     Message messFromDb = await _messageRepository.GetByIdAsync(message.Id, true);
                     messFromDb.IsChecked = true;
                     await _messageRepository.SaveChangesAsync();
-                }
             }
             if (count > 19)
             {
@@ -220,10 +202,12 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 
             }
             ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(userName);
-            ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(chat.ChatPartnerUserName);
 
             await Clients.Group(userName).SendAsync("GetChatItems", userChatItems);
+          
+            ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(chat.ChatPartnerUserName);
             await Clients.Group(chat.ChatPartnerUserName).SendAsync("GetChatItems", partnerChatItems);
+
 
             await Groups.AddToGroupAsync(Context.ConnectionId, chat.ConnectionId);
             if (!Chats.ContainsKey(chat.ConnectionId))
@@ -312,12 +296,16 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         {
             if (id <= 0) return;
             ChatDeleteGetDto dto = await _chatService.DeleteMessageAsync(id, userName);
-            ICollection<ChatItemGetDto> firstChatItems = await _chatService.GetChatItemsAsync(dto.FirstUserUserName);
-            ICollection<ChatItemGetDto> secondChatItems = await _chatService.GetChatItemsAsync(dto.SecondUserUserName);
-
-            await Clients.Group(dto.ConnectionId).SendAsync("GetMessagesAfterDelete", dto.Messages);
-            await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatItems", firstChatItems);
-            await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatItems", secondChatItems);
+            if (dto.FirstUserUserName == userName)
+            {
+                await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatMessagesAfterDelete", dto);
+                await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatAfterDelete", dto);
+            }
+            else
+            {
+                await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatMessagesAfterDelete", dto);
+                await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatAfterDelete", dto);
+            }
         }
         public async Task AddGroupAdmin(int groupId, string userName, string addedBy)
         {
@@ -475,7 +463,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(dto.Sender);
                 ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(chat.ChatPartnerUserName);
 
-                await Clients.Group(chat.ConnectionId).SendAsync("RecieveMessage", sendedMessage);
+                await Clients.Groups(chat.ConnectionId).SendAsync("RecieveMessage", sendedMessage);
                 await Clients.Group(dto.Sender).SendAsync("GetChatItems", userChatItems);
                 await Clients.Group(chat.ChatPartnerUserName).SendAsync("GetChatItems", partnerChatItems);
             }

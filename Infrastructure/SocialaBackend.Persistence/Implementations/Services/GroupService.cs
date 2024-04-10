@@ -25,7 +25,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly ILogger<GroupService> _logger;
         private readonly IHubContext<NotificationHub> _notificationHub;
         private readonly INotificationRepository _notificationRepository;
-        private readonly IHubContext<ChatHub> _chatHub;
+        private readonly IHubContext<MessagesHub> _messagesHub;
         private readonly IGroupMessageRepository _groupMessageRepository;
         private readonly IMapper _mapper;
         private readonly IGroupRepository _groupRepository;
@@ -33,12 +33,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IFileService _fileService;
         private readonly ICloudinaryService _cloudinaryService;
 
-        public GroupService(ILogger<GroupService> logger, IHubContext<NotificationHub> notificationHub, INotificationRepository notificationRepository, IHubContext<ChatHub> chatHub, IGroupMessageRepository groupMessageRepository, IMapper mapper, IGroupRepository groupRepository, UserManager<AppUser> userManager, IFileService fileService, ICloudinaryService cloudinaryService)
+        public GroupService(ILogger<GroupService> logger, IHubContext<NotificationHub> notificationHub, INotificationRepository notificationRepository, IHubContext<MessagesHub> messagesHub, IGroupMessageRepository groupMessageRepository, IMapper mapper, IGroupRepository groupRepository, UserManager<AppUser> userManager, IFileService fileService, ICloudinaryService cloudinaryService)
         {
             _logger = logger;
             _notificationHub = notificationHub;
             _notificationRepository = notificationRepository;
-            _chatHub = chatHub;
+            _messagesHub = messagesHub;
             _groupMessageRepository = groupMessageRepository;
             _mapper = mapper;
             _groupRepository = groupRepository;
@@ -95,7 +95,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             };
             foreach (string member in newGroup.Members.Select(m => m.AppUser.UserName))
             {
-                await _chatHub.Clients.Group(member).SendAsync("GetNewGroup", newGroupItem);
+                await _messagesHub.Clients.Group(member).SendAsync("GetNewGroup", newGroupItem);
             }
         }
 
@@ -179,11 +179,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 ImageUrl = mess.ImageUrl,
                 IsChecked = mess.CheckedUsers.Count > 0,
             });
-            await _chatHub.Clients.Group(message.Group.ConnectionId).SendAsync("GetGroupMessagesAfterDelete",messagesDto);
+            await _messagesHub.Clients.Group(message.Group.ConnectionId).SendAsync("GetGroupMessagesAfterDelete",messagesDto);
             foreach (var member in message.Group.Members)
             {
                 ICollection<GroupItemGetDto> dto = await GetGroupItemsAsync(member.AppUser.UserName);
-                await _chatHub.Clients.Group(member.AppUser.UserName).SendAsync("GetGroupItems", dto);
+                await _messagesHub.Clients.Group(member.AppUser.UserName).SendAsync("GetGroupItems", dto);
             }
 
 

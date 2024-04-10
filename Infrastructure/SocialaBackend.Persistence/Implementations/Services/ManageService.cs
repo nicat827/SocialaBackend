@@ -77,7 +77,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             return dto;
         }
 
-        public async Task<string?> ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles)
+        public async Task ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles)
         {
             AppUser? user = await _userManager.FindByNameAsync(userName);
             if (user is null) throw new AppUserNotFoundException($"User with username {userName} was not defined!");
@@ -123,12 +123,12 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
             if (hasChanges)
             {
-                //(accessToken, DateTime validTo) = await _tokenService.GenerateAccessTokenAsync(user);
+                user.RefreshToken = null;
+                user.RefreshTokenExpiresAt = null;
+                await _userManager.UpdateAsync(user);
+                
 
             }
-            return accessToken;
-
-
           
         }
         public async Task<IEnumerable<VerifyRequestGetDto>> GetVerifyRequestsAsync(string sortType, bool desc, int skip)

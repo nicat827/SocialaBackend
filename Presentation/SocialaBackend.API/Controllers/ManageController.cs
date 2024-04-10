@@ -37,8 +37,8 @@ namespace SocialaBackend.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeRoles([FromForm]string userName, [FromForm] IEnumerable<UserRole> roles)
         {
-           
-            return Ok(await _service.ChangeRolesUserAsync(userName, roles));
+            await _service.ChangeRolesUserAsync(userName, roles);
+            return NoContent();
         }
 
         [HttpPost("verify")]

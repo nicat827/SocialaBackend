@@ -104,7 +104,7 @@ app.MapControllers();
 
 
 app.MapHub<NotificationHub>("/notificationHub");
-app.MapHub<ChatHub>("/chatHub");
+app.MapHub<MessagesHub>("/messagesHub");
 
 
 

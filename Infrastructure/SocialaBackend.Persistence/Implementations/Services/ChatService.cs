@@ -74,23 +74,27 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (message.Sender != userName) throw new DontHavePermissionException("You cant delete this message!");
             IList<Message> chatMessages = message.Chat.Messages;
 
-            string? lastMessage = chatMessages.FirstOrDefault().Text;
+            Message? lastMessage = chatMessages.FirstOrDefault();
             _messageRepository.Delete(message);
-            if (lastMessage == message.Text)
+            if (lastMessage?.Id == message.Id )
             {
                 if (message.Chat.Messages.Count > 1)
                 {
                     message.Chat.LastMessageSendedAt = chatMessages[1].CreatedAt;
                     message.Chat.LastMessageSendedBy = chatMessages[1].Sender;
                     message.Chat.LastMessage = chatMessages[1].Text;
+                    message.Chat.LastMessageIsChecked = chatMessages[1].IsChecked;
                 }
                 else
                 {
                     message.Chat.LastMessageSendedAt =  null;
                     message.Chat.LastMessageSendedBy = null;
                     message.Chat.LastMessage = null;
+                    message.Chat.LastMessageIsChecked = false;
+
                 }
             }
+            bool isChecked = message.IsChecked;
             await _messageRepository.SaveChangesAsync();
             return new ChatDeleteGetDto
             {
@@ -99,6 +103,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 SecondUserUserName = message.Chat.SecondUser.UserName,
                 Messages = _mapper.Map<IEnumerable<MessageGetDto>>(message.Chat.Messages),
                 ConnectionId = message.Chat.ConnectionId,
+                IsDeletedMessageChecked = isChecked
             };
 
         }
@@ -361,6 +366,18 @@ namespace SocialaBackend.Persistence.Implementations.Services
             }
 
             return dto;
+        }
+
+        public async Task<int> GetUnreadedMessagesCountAsync(string userName)
+        {
+            if (!await _userManager.Users.AnyAsync(u => u.UserName == userName))
+                throw new AppUserNotFoundException($"User with username {userName} doesnt exists!");
+            int count = await _messageRepository.GetCountAsync(
+                m => !m.IsChecked && m.Sender != userName &&  (m.Chat.FirstUser.UserName == userName || m.Chat.SecondUser.UserName == userName),
+                includes:new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
+            return count;
+                
+
         }
     }
 }

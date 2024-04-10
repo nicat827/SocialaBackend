@@ -11,7 +11,7 @@ namespace SocialaBackend.Application.Abstractions.Services
     public interface IManageService
     {
         Task<ICollection<AppUserSearchDto>> SearchUsersAsync(string searchTerm, int skip);
-        Task<string?> ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles);
+        Task ChangeRolesUserAsync(string userName, IEnumerable<UserRole> roles);
         Task<ManageGetDto> GetManageAsync();
 
         Task ConfirmOrCancelVerifyRequestAsync(int id, bool status);
