@@ -1,4 +1,5 @@
-﻿using SocialaBackend.Domain.Enums;
+﻿using Microsoft.AspNetCore.Http;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace SocialaBackend.Application.Abstractions.Services
     public interface ICloudinaryService
     {
         Task<string> UploadFileAsync(string srcUrl,FileType type, params string[] folders);
+        Task<string> UploadAudioAsync(IFormFile audioFile);
     }
 }

@@ -1,4 +1,5 @@
-﻿using SocialaBackend.Application.Dtos;
+﻿using Microsoft.AspNetCore.Http;
+using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.Chat;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName);
         Task<ChatDeleteGetDto> DeleteMessageAsync(int id, string userName);
         Task<ChatGetDto> GetChatByIdAsync(int id, string userName);
-
+        Task SendAudioAsync(IFormFile file, int chatId);
         Task<int> GetUnreadedMessagesCountAsync(string userName);
         Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);
         Task<int> GetNewMessagesCountAsync(string userName);    

@@ -25,6 +25,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class ChatService : IChatService
     {
+        private readonly string _currentUserName;
+        private readonly IHubContext<MessagesHub> _messagesHub;
         private readonly IMapper _mapper;
         private readonly INotificationRepository _notificationRepository;
         private readonly IHubContext<NotificationHub> _hubContext;
@@ -33,8 +35,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IMessageRepository _messageRepository;
         private readonly IChatRepository _chatRepository;
         private readonly UserManager<AppUser> _userManager;
-        public ChatService(IMapper mapper, INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext, IFileService fileService, ICloudinaryService cloudinaryService, IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
+        public ChatService(IHubContext<MessagesHub> messagesHub, IHttpContextAccessor http, IMapper mapper, INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext, IFileService fileService, ICloudinaryService cloudinaryService, IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
         {
+            _currentUserName = http.HttpContext.User.Identity.Name;
+            _messagesHub = messagesHub;
             _mapper = mapper;
             _notificationRepository = notificationRepository;
             _hubContext = hubContext;
@@ -183,7 +187,41 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
 
         }
+        public async Task SendAudioAsync(IFormFile file, int chatId)
+        {
+            AppUser user = await _userManager.FindByNameAsync(_currentUserName);
 
+            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
+            Chat? chat = await _chatRepository.GetByIdAsync(chatId, true, includes: new[] { "FirstUser", "SecondUser" });
+            if (chat is null) throw new NotFoundException($"Chat with id {chatId} doesnt exists!");
+            if (chat.FirstUser.UserName != _currentUserName && chat.SecondUser.UserName != _currentUserName)
+                throw new DontHavePermissionException("You cant write message to this chat!");
+            string cloudinaryUrl = await _cloudinaryService.UploadAudioAsync(file);
+            Message message = new Message
+            {
+                AudioUrl = cloudinaryUrl,
+                Sender = _currentUserName,
+                ChatId = chat.Id,
+                
+            };
+            chat.LastMessage = "Voice message";
+            chat.LastMessageSendedAt = DateTime.UtcNow;
+            chat.LastMessageSendedBy = _currentUserName;
+            chat.LastMessageIsChecked = false;
+            await _messageRepository.CreateAsync(message);
+            await _messageRepository.SaveChangesAsync();
+            
+            MessageGetDto messageDto =  _mapper.Map<MessageGetDto>(message);
+            ICollection<ChatItemGetDto> userChatItems = await GetChatItemsAsync(chat.FirstUser.UserName);
+            ICollection<ChatItemGetDto> partnerChatItems = await GetChatItemsAsync(chat.SecondUser.UserName);
+
+            await _messagesHub.Clients.Group(chat.ConnectionId).SendAsync("RecieveMessage", messageDto);
+            await _messagesHub.Clients.Group(chat.FirstUser.UserName).SendAsync("GetChatItems", userChatItems);
+            await _messagesHub.Clients.Group(chat.SecondUser.UserName).SendAsync("GetChatItems", partnerChatItems);
+
+
+
+        }
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
         {
             //if (dto.Text is null && dto.Media is null) throw new MessageValidationException("Message must have at least text or media!");
@@ -201,52 +239,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 CreatedAt = DateTime.UtcNow
                 
             };
-            //bool exceptionCatched = false;
-            //bool isSucceedUpload = false;
-            //if (dto.Media is not null)
-            //{
-            //    foreach (MediaPostDto media in dto.Media)
-            //    {
-            //        try
-            //        {
-                        
-            //            FileType type = _fileService.GetFileType(media.FileName);
-            //            string localUrl = await _fileService.CreateFileFromBytesAsync(media.MediaInBytes, media.FileName, "uploads", "chats");
-            //            string realUrl = await _cloudinaryService.UploadFileAsync(localUrl, type, "uploads", "chats");
-            //            message.Media.Add(new MessageMedia { MediaUrl = realUrl, MediaType = type });
-            //            if (!isSucceedUpload) isSucceedUpload = true;
-            //        }
-            //        catch (BaseException ex)
-            //        {
-            //            exceptionCatched = true;
-            //        }
-            //    }
-            //}
-            //if (dto.Media is not null && !isSucceedUpload && dto.Text is null) throw new MessageValidationException("It seems that the media you uploaded is invalid. Please ensure the file format is either an image or video, and its size doesn't exceed 100MB.");
-            //if (exceptionCatched)
-            //{
-            //    Notification notification = new Notification
-            //    {
-            //        Title = "Oops!",
-            //        Text = "Some media were not sent because they did not pass validation.",
-            //        Type = NotificationType.System,
-            //        AppUser = user,
-            //    };
-            //    await _notificationRepository.CreateAsync(notification);
-            //    await _notificationRepository.SaveChangesAsync();
-            //    NotificationsGetDto notificationDto = new NotificationsGetDto {
-            //        Title = notification.Title,
-            //        Text = notification.Text,
-            //        Type = notification.Type.ToString(),
-            //        Id = notification.Id,
-            //        CreatedAt = notification.CreatedAt,
-            //        IsChecked = notification.IsChecked
-
-            //    };
-            //    await _hubContext.Clients.Group(dto.Sender).SendAsync("NewNotification", notificationDto);
-            //}
-
-            //chat.LastMessageIsMedia = isSucceedUpload;
+            
             chat.LastMessage = dto.Text;
             chat.LastMessageSendedAt = DateTime.UtcNow;
             chat.LastMessageSendedBy = dto.Sender;

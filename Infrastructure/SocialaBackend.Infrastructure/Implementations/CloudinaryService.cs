@@ -1,6 +1,7 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Exceptions;
@@ -43,6 +44,13 @@ namespace SocialaBackend.Infrastructure.Implementations
                         File = new FileDescription(_fileService.GeneratePath(srcUrl, folders)),
                     };
                     break;
+                case FileType.Audio:
+                    uploadParams = new RawUploadParams()
+                    {
+                        File = new FileDescription(_fileService.GeneratePath(srcUrl, folders)),
+                        
+                    };
+                    break;
                 default: throw new CloudinaryFileUploadException("Upload type of post is not supported!");
 
             }
@@ -53,6 +61,28 @@ namespace SocialaBackend.Infrastructure.Implementations
             return uploadResult.SecureUrl.ToString();
             
             
+        }
+
+        public async Task<string> UploadAudioAsync(IFormFile audioFile)
+        {
+            using (var stream = audioFile.OpenReadStream())
+            {
+                var uploadParams = new RawUploadParams
+                {
+                    File = new FileDescription(audioFile.FileName, stream)
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                if (uploadResult.Error != null)
+                {
+                    // Обработка ошибки загрузки на Cloudinary
+                    throw new CloudinaryFileUploadException(uploadResult.Error.Message);
+                }
+
+                // Возвращаем URL загруженного файла
+                return uploadResult.SecureUrl.ToString();
+            }
         }
     }
 }

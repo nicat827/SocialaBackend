@@ -218,6 +218,9 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (request is not null && request.Status == VerifyStatus.Canceled)
             {
                 request.Status = VerifyStatus.Pending;
+                IEnumerable<AppUser> admins = await _userManager.GetUsersInRoleAsync(UserRole.Admin.ToString());
+                IEnumerable<AppUser> moderators = await _userManager.GetUsersInRoleAsync(UserRole.Moderator.ToString());
+             
             } 
             else
             {
@@ -241,7 +244,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 },
                 AdminsCount = admins.Count(),
                 ModeratorsCount = moderators.Count(),
-                VerifiedUsersCount  = verified.Count(),
+                VerifiedUsersCount = verified.Count(),
                 AllUsersCount =  await _userManager.Users.CountAsync()
             };
         }

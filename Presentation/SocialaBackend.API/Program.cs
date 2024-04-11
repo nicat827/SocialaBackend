@@ -62,7 +62,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddSignalR();//.AddAzureSignalR();
 
-builder.Logging.AddAzureWebAppDiagnostics();
+//builder.Logging.AddAzureWebAppDiagnostics();
 //builder.Services.Configure<AzureFileLoggerOptions>(opt =>
 //{
 //    opt.FileName = "logs-";
