@@ -298,12 +298,12 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             ChatDeleteGetDto dto = await _chatService.DeleteMessageAsync(id, userName);
             if (dto.FirstUserUserName == userName)
             {
-                await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatMessagesAfterDelete", dto);
+                await Clients.Group(dto.FirstUserUserName).SendAsync("GetMessagesAfterDelete", dto.Messages);
                 await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatAfterDelete", dto);
             }
             else
             {
-                await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatMessagesAfterDelete", dto);
+                await Clients.Group(dto.SecondUserUserName).SendAsync("GetMessagesAfterDelete", dto.Messages);
                 await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatAfterDelete", dto);
             }
         }

@@ -60,7 +60,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Name = dto.Name,
                 Description = dto.Description,
                 ConnectionId = Guid.NewGuid().ToString(),
-                LastMessageSendedAt = DateTime.Now,
             };
             newGroup.Members.Add(new GroupMemberItem { AppUser = owner, Role = GroupRole.Owner });
             foreach (GroupMembersPostDto member in dto.Members)
@@ -277,7 +276,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 ImageUrl = dto.ImageUrl
             };
             group.LastMessage = dto.Text;
-            group.LastMessageSendedAt = DateTime.Now;
+            group.LastMessageSendedAt = DateTime.UtcNow;
             group.LastMessageSendedBy = dto.Sender;
             group.LastMessageIsChecked = false;
             await _groupMessageRepository.CreateAsync(message);

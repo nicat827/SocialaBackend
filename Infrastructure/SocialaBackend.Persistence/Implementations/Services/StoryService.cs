@@ -68,12 +68,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
             await _storyItemsRepository.SaveChangesAsync();
         }
 
-        public async Task<ICollection<StoryItemCurrentGetDto>> GetCurrentUserStoryItemsAsync()
+        public async Task<IEnumerable<StoryItemCurrentGetDto>> GetCurrentUserStoryItemsAsync()
         {
             AppUser? user =  await _userManager.Users
                 .Where(u => u.UserName == _currentUsername)
                 .Include(u => u.Story)
                     .ThenInclude(s => s.StoryItems.Where(si => !si.IsDeleted))
+                        .ThenInclude(si => si.Watchers)
+                            .ThenInclude(w => w.Watcher)
                 .FirstOrDefaultAsync();
             if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} wasnt found!");
             var mustAddToarchiveStoryItems = user.Story.StoryItems.Where(si => si.CreatedAt.AddDays(1) < DateTime.Now);
@@ -86,33 +88,67 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 }
                 await _storyItemsRepository.SaveChangesAsync();
             }
-            var orderedItems = user.Story.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now).OrderBy(s => s.CreatedAt);
-            return _mapper.Map<ICollection<StoryItemCurrentGetDto>>(orderedItems);
+            IEnumerable<StoryItem> orderedItems = user.Story.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now).OrderBy(s => s.CreatedAt);
+            ICollection<StoryItemCurrentGetDto> dto = new List<StoryItemCurrentGetDto>();
+            foreach (StoryItem item in orderedItems)
+            {
+                dto.Add(new StoryItemCurrentGetDto
+                {
+                    CreatedAt = item.CreatedAt,
+                    SourceUrl = item.SourceUrl,
+                    Id = item.Id,
+                    Text = item.Text,
+                    Type = item.Type,
+                    WatchCount = item.WatchCount,
+                    Watchers = _mapper.Map<IEnumerable<StoryItemWatcherDto>>(item.Watchers),
+                    IsWatched = item.Watchers.Any(w => w.Watcher.UserName == _currentUsername) ? true : false
+                });
+            }
+            return dto;
         }
 
         public async Task<IEnumerable<StoryGetDto>> GetStoriesAsync()
         {
             AppUser? user = await _userManager.Users
                 .Where(u => u.UserName == _currentUsername)
-                    .Include(u => u.Follows.Where(uf => uf.IsConfirmed == true))
+                .Include(u => u.Follows.Where(uf => uf.IsConfirmed == true))
+                .Include(u => u.WatchedStoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
+                .Include(u => u.Story)
                 .FirstOrDefaultAsync();
+            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUsername} doesnt exists!");
             ICollection<StoryGetDto> dto = new List<StoryGetDto>();
+        
             foreach (FollowItem userFollow in user.Follows)
             {
                 Story story = await _storyRepository.Get(s => s.Owner.UserName == userFollow.UserName, includes: new[] { "Owner"});
                 if (story == null) throw new NotFoundException("User story is not defined!");
                 if (story.LastItemAddedAt?.AddDays(1) > DateTime.Now)
                 {
-                     dto.Add(new StoryGetDto {
+                    dto.Add(new StoryGetDto
+                    {
                         Id = story.Id,
-                        OwnerImageUrl=userFollow.ImageUrl,
+                        OwnerImageUrl = userFollow.ImageUrl,
                         OwnerUserName = userFollow.UserName,
                         LastStoryPostedAt = story.LastItemAddedAt,
-                        LastStoryItemId = story.LastStoryItemId
-                    });
+                        LastStoryItemId = story.LastStoryItemId,
+                        IsChecked = user.WatchedStoryItems.Select(ws => ws.StoryItemId).ToList().Contains((int)story.LastStoryItemId)
+                    }); ;
                 }
             }
-            var sortedDto = dto.OrderByDescending(s => s.LastStoryPostedAt);
+            IEnumerable<StoryGetDto> sortedDto = dto.OrderByDescending(s => s.LastStoryPostedAt);
+            if (user.Story.LastItemAddedAt is not null && user.Story.LastItemAddedAt.Value.AddDays(1) > DateTime.Now)
+            {
+                sortedDto = sortedDto.Prepend(new StoryGetDto
+                {
+                    Id = user.Story.Id,
+                    LastStoryItemId = user.Story.LastStoryItemId,
+                    OwnerImageUrl = user.ImageUrl,
+                    OwnerUserName = user.UserName,
+                    LastStoryPostedAt = user.Story.LastItemAddedAt,
+                    IsChecked = user.WatchedStoryItems.Select(ws => ws.StoryItemId).ToList().Contains((int)user.Story.LastStoryItemId)
+
+                });
+            }
             return sortedDto;
 
         }
@@ -169,15 +205,28 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<ICollection<StoryItemGetDto>> GetStoryItemsAsync(int storyId)
         {
             Story story = await _storyRepository.GetByIdAsync(storyId, expressionIncludes: s => s.StoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now),
-                            includes: new[] {"Owner", "Owner.Followers" });
+                            includes: new[] {"Owner", "Owner.Followers", "StoryItems.Watchers", "StoryItems.Watchers.Watcher" });
             if (story is null) throw new NotFoundException($"Story with id {storyId} wasnt found!");
             if (story.Owner.IsPrivate)
             {
                 if (!story.Owner.Followers.Any(f => f.UserName == _currentUsername && f.IsConfirmed == true))
                     throw new ForbiddenException("This account is private, follow for seeing stories!");
             }
-            var orderedItems = story.StoryItems.Where(si => !si.IsDeleted).OrderBy(si => si.CreatedAt);
-            return _mapper.Map<ICollection<StoryItemGetDto>>(orderedItems);
+            IEnumerable<StoryItem> orderedItems = story.StoryItems.Where(si => !si.IsDeleted).OrderBy(si => si.CreatedAt);
+            ICollection<StoryItemGetDto> dto = new List<StoryItemGetDto>();
+            foreach (StoryItem item in orderedItems) 
+            {
+                dto.Add(new StoryItemGetDto
+                {
+                    CreatedAt = item.CreatedAt,
+                    SourceUrl = item.SourceUrl,
+                    Id = item.Id,
+                    Text = item.Text,
+                    Type = item.Type,
+                    IsWatched = item.Watchers.Any(w => w.Watcher.UserName == _currentUsername) ? true : false
+                });
+            }
+            return dto;
 
         }
 

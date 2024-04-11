@@ -16,6 +16,7 @@ namespace SocialaBackend.Application.Dtos
 
         public DateTime? LastStoryPostedAt { get; set; }
         public int? LastStoryItemId { get; set; }
+        public bool IsChecked { get; set; }
 
 
 

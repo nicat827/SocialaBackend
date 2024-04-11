@@ -248,7 +248,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
             //chat.LastMessageIsMedia = isSucceedUpload;
             chat.LastMessage = dto.Text;
-            chat.LastMessageSendedAt = DateTime.Now;
+            chat.LastMessageSendedAt = DateTime.UtcNow;
             chat.LastMessageSendedBy = dto.Sender;
             chat.LastMessageIsChecked = false;
             await _messageRepository.CreateAsync(message);
@@ -292,7 +292,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = dto.Text,
             };
             chat.LastMessage = newMessage.Text;
-            chat.LastMessageSendedAt = DateTime.Now;
+            chat.LastMessageSendedAt = DateTime.UtcNow;
             chat.LastMessageSendedBy = dto.Sender;
             chat.LastMessageIsChecked = false;
             if (isNew) await _chatRepository.CreateAsync(chat);

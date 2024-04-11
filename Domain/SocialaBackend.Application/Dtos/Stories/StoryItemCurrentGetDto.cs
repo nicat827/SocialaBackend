@@ -16,6 +16,7 @@ namespace SocialaBackend.Application.Dtos
         public FileType Type { get; set; }
         public DateTime CreatedAt { get; set; }
         public int WatchCount { get; set; }
+        public bool IsWatched { get; set; }
         public IEnumerable<StoryItemWatcherDto> Watchers { get; set; } = new List<StoryItemWatcherDto>();
 
     }

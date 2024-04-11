@@ -62,7 +62,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddSignalR();//.AddAzureSignalR();
 
-//builder.Logging.AddAzureWebAppDiagnostics();
+builder.Logging.AddAzureWebAppDiagnostics();
 //builder.Services.Configure<AzureFileLoggerOptions>(opt =>
 //{
 //    opt.FileName = "logs-";
@@ -101,10 +101,12 @@ app.AddPersistenceConfigure();
 
 app.MapControllers();
 
+app.UseEndpoints(cfg =>
+{
+    cfg.MapHub<NotificationHub>("/notificationHub");
+    cfg.MapHub<MessagesHub>("/messagesHub");
+});
 
-
-app.MapHub<NotificationHub>("/notificationHub");
-app.MapHub<MessagesHub>("/messagesHub");
 
 
 
