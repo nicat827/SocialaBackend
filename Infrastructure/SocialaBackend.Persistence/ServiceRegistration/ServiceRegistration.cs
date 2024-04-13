@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocialaBackend.Application.Abstractions.Hubs;
 
 namespace SocialaBackend.Persistence.ServiceRegistration
 {
@@ -67,6 +68,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<IManageService, ManageService>();
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<AppDbContextInitializer>();
+
 
         }
 

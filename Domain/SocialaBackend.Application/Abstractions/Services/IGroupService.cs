@@ -15,5 +15,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task DeleteMessageAsync(int id, string userName);
         Task<GroupGetDto> GetGroupByIdAsync(int id, string userName);
         Task<GroupMessageGetDto> SendMessageAsync(GroupMessagePostDto dto);
+
+        Task<int> GetGroupsCountAsync(string userName);
     }
 }

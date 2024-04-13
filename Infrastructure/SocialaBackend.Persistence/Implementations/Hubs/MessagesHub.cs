@@ -9,6 +9,7 @@ using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.Chat;
+using SocialaBackend.Application.Dtos.Chat.Message;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Application.Exceptions.Base;
 using SocialaBackend.Domain.Entities;
@@ -22,7 +23,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace SocialaBackend.Persistence.Implementations.Hubs
 {
@@ -59,6 +59,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             //send unreaded messages count
             int unreadedMessagesCount = await _chatService.GetUnreadedMessagesCountAsync(userName);
             await Clients.Client(Context.ConnectionId).SendAsync("GetUnreadedMessagesCount", unreadedMessagesCount);
+            
         }
         public async Task Disconnect(string userName)
         {
@@ -87,7 +88,7 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 await Clients.Client(Context.ConnectionId).SendAsync("SendMessageError", $"{ex.Message}");
             }
         }
-
+        
         public async Task DisconnectGroup(int groupId, string userName)
         {
             try
@@ -168,17 +169,6 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         public async Task ConnectToChat(int chatId, string userName)
         {
             ChatGetDto chat = await _chatService.GetChatByIdAsync(chatId, userName);
-            var lastMess = chat.Messages.FirstOrDefault();
-            if (lastMess is not null)
-            {
-                if (!lastMess.IsChecked && lastMess.Sender != userName)
-                {
-                    Chat chatFromDb = await _chatRepository.GetByIdAsync(chatId, true);
-                    chatFromDb.LastMessageIsChecked = true;
-                    await _chatRepository.SaveChangesAsync();
-
-                }
-            }
             int count = 0;
             foreach (MessageGetDto message in chat.Messages.Where(m => !m.IsChecked && m.Sender != userName))
             {
@@ -296,16 +286,11 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
         {
             if (id <= 0) return;
             ChatDeleteGetDto dto = await _chatService.DeleteMessageAsync(id, userName);
-            if (dto.FirstUserUserName == userName)
-            {
-                await Clients.Group(dto.FirstUserUserName).SendAsync("GetMessagesAfterDelete", dto.Messages);
-                await Clients.Group(dto.SecondUserUserName).SendAsync("GetChatAfterDelete", dto);
-            }
-            else
-            {
-                await Clients.Group(dto.SecondUserUserName).SendAsync("GetMessagesAfterDelete", dto.Messages);
-                await Clients.Group(dto.FirstUserUserName).SendAsync("GetChatAfterDelete", dto);
-            }
+         
+            await Clients.Group(dto.ConnectionId).SendAsync("GetDeletedMesssageId", id);
+            await Clients.Group(dto.ChatPartnerUserName).SendAsync("GetChatAfterDelete", dto);
+            await Clients.Group(userName).SendAsync("GetChatAfterDelete", dto);
+            
         }
         public async Task AddGroupAdmin(int groupId, string userName, string addedBy)
         {
@@ -441,31 +426,39 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                 await Clients.Client(Context.ConnectionId).SendAsync("SendMessageError", ex.Message);
             }
         }
+
+        public async Task CheckChatAfterSendMessage(string chatConnectionId, int chatId, string sender, string reciever, MessageGetDto sendedMessage)
+        {
+            
+            if (Chats.ContainsKey(chatConnectionId))
+            {
+                ICollection<(string userName, int count)> usersInCurrentChat = Chats[chatConnectionId];
+                if (usersInCurrentChat.Any(tuple => tuple.userName != sender))
+                {
+                    sendedMessage.IsChecked = true;
+                    Message messFromDb = await _messageRepository.GetByIdAsync(sendedMessage.Id, true);
+                    messFromDb.IsChecked = true;
+                    await _messageRepository.SaveChangesAsync();
+                }
+                ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(sender);
+                ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(reciever);
+                await Clients.Group(sender).SendAsync("GetChatItems", userChatItems);
+                await Clients.Group(reciever).SendAsync("GetChatItems", partnerChatItems);
+            }
+        }
+    
         public async Task SendMessageByChatId(MessagePostDto dto)
         {
             try
             {
                 ChatGetDto chat = await _chatService.GetChatByIdAsync(dto.ChatId, dto.Sender);
                 MessageGetDto sendedMessage = await _chatService.SendMessageAsync(dto);
-                if (Chats.ContainsKey(chat.ConnectionId))
-                {
-                    ICollection<(string userName, int count)> usersInCurrentChat = Chats[chat.ConnectionId];
-                    if (usersInCurrentChat.Any(tuple => tuple.userName != dto.Sender))
-                    {
-                        sendedMessage.IsChecked = true;
-                        Message messFromDb = await _messageRepository.GetByIdAsync(sendedMessage.Id, true);
-                        messFromDb.IsChecked = true;
-                        Chat chatFromDb = await _chatRepository.GetByIdAsync(dto.ChatId, true);
-                        chatFromDb.LastMessageIsChecked = true;
-                        await _messageRepository.SaveChangesAsync();
-                    }
-                }
-                ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(dto.Sender);
-                ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(chat.ChatPartnerUserName);
+                await CheckChatAfterSendMessage(chat.ConnectionId, chat.Id, dto.Sender,chat.ChatPartnerUserName,  sendedMessage);
 
+           
+                    
                 await Clients.Groups(chat.ConnectionId).SendAsync("RecieveMessage", sendedMessage);
-                await Clients.Group(dto.Sender).SendAsync("GetChatItems", userChatItems);
-                await Clients.Group(chat.ChatPartnerUserName).SendAsync("GetChatItems", partnerChatItems);
+               
             }
             catch (BaseException ex)
             {
@@ -564,8 +557,6 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                         sendedMessage.IsChecked = true;
                         Message messFromDb = await _messageRepository.GetByIdAsync(sendedMessage.Id, true);
                         messFromDb.IsChecked = true;
-                        Chat chatFromDb = await _chatRepository.GetByIdAsync(chat.Id, true);
-                        chatFromDb.LastMessageIsChecked = true;
                         await _messageRepository.SaveChangesAsync();
                     }
                 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SocialaBackend.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,10 @@ namespace SocialaBackend.Application.Dtos
         public DateTime? CreatedAt { get; set; }
         public string? Text { get; set; }
         public string? AudioUrl { get; set; }
+        public MessageType Type { get; set; }
+        public int? Minutes { get; set; }
+        public int? Seconds { get; set; }
+
         //public IEnumerable<MessageMediaGetDto> Media { get; set; } = new List<MessageMediaGetDto>();
         public bool IsChecked { get; set; }
         public string Sender { get; set; } = null!;

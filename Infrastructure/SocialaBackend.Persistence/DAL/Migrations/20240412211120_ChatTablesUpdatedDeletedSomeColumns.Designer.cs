@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialaBackend.Persistence.DAL;
 
@@ -11,9 +12,10 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240412211120_ChatTablesUpdatedDeletedSomeColumns")]
+    partial class ChatTablesUpdatedDeletedSomeColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -535,12 +537,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("Minutes")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Seconds")
-                        .HasColumnType("int");
 
                     b.Property<string>("Sender")
                         .IsRequired()

@@ -10,10 +10,10 @@ namespace SocialaBackend.Application.Dtos
     {
         public int Id { get; set; }
         public string ConnectionId { get; set; } = null!;
-        public string FirstUserUserName { get; set; } = null!;
-        public string SecondUserUserName { get; set; } = null!;
-        public IEnumerable<MessageGetDto> Messages { get; set; } = new List<MessageGetDto>();
+        public string ChatPartnerUserName { get; set; } = null!;
+        public MessageGetDto? CurrentLastMessage { get; set; } = new MessageGetDto();
         public bool IsDeletedMessageChecked { get; set; }
+        public int DeletedMessageId { get; set; }
 
     }
 }

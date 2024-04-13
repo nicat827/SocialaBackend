@@ -3,6 +3,7 @@ using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Exceptions;
 using SocialaBackend.Domain.Enums;
@@ -84,5 +85,32 @@ namespace SocialaBackend.Infrastructure.Implementations
                 return uploadResult.SecureUrl.ToString();
             }
         }
+
+        public async Task<double> GetAudioDurationAsync(string audioUrl)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                double duration = 0;
+                try
+                {
+                    HttpResponseMessage response = await client.GetAsync(audioUrl);
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+
+                    // Разбираем JSON-ответ для получения метаданных
+                    JObject metadata = JObject.Parse(responseBody);
+
+                    double durationInSeconds = (double)metadata["duration"];
+                    duration = durationInSeconds;
+                    Console.WriteLine($"Длительность аудиофайла: {durationInSeconds} секунд");
+
+                }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine($"Ошибка при отправке запроса: {e.Message}");
+                }
+                return duration;
+            }
+        }  
     }
 }

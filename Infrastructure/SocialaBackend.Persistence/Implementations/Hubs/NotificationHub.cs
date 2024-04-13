@@ -15,14 +15,12 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
 {
     public class NotificationHub : Hub
     {
-        private readonly IChatService _chatService;
         private readonly INotificationService _service;
         private  static IList<string> ConnectedUsers = new List<string>();
         private  static Dictionary<string, int> GroupCount = new Dictionary<string, int>();
         private  static Dictionary<string, string> DictionaryConnect = new Dictionary<string, string>();
-        public NotificationHub(IChatService chatService, INotificationService service)
+        public NotificationHub(INotificationService service)
         {
-            _chatService = chatService;
             _service = service;
         }
 

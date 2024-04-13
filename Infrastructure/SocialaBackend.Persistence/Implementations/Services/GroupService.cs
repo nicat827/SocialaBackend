@@ -292,5 +292,10 @@ namespace SocialaBackend.Persistence.Implementations.Services
             };
         }
 
+        public async Task<int> GetGroupsCountAsync(string userName)
+        {
+            return await _groupRepository.GetCountAsync(g => g.Members.Any(m => m.AppUser.UserName == userName), "Members", "Members.AppUser");
+        }
+
     }
 }

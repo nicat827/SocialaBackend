@@ -12,5 +12,7 @@ namespace SocialaBackend.Application.Abstractions.Services
     {
         Task<string> UploadFileAsync(string srcUrl,FileType type, params string[] folders);
         Task<string> UploadAudioAsync(IFormFile audioFile);
+
+        Task<double> GetAudioDurationAsync(string audioUrl);
     }
 }

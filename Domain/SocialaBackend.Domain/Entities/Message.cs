@@ -1,4 +1,5 @@
 ﻿using SocialaBackend.Domain.Entities.Base;
+using SocialaBackend.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,9 @@ namespace SocialaBackend.Domain.Entities
         public string Sender { get; set; } = null!;
         public string? AudioUrl { get; set; }
         public bool IsChecked { get; set; }
+        public MessageType Type { get; set; }
+        public int? Minutes { get; set; }
+        public int? Seconds { get; set; }
         //relational
         public int ChatId { get; set; }
         public Chat Chat { get; set; } = null!;

@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
@@ -8,24 +7,17 @@ using SocialaBackend.Application.Abstractions.Repositories;
 using SocialaBackend.Application.Abstractions.Services;
 using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.Chat;
+using SocialaBackend.Application.Dtos.Chat.Message;
 using SocialaBackend.Application.Exceptions;
-using SocialaBackend.Application.Exceptions.Base;
 using SocialaBackend.Domain.Entities;
 using SocialaBackend.Domain.Entities.User;
 using SocialaBackend.Domain.Enums;
 using SocialaBackend.Persistence.Implementations.Hubs;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocialaBackend.Persistence.Implementations.Services
 {
     internal class ChatService : IChatService
     {
-        private readonly string _currentUserName;
         private readonly IHubContext<MessagesHub> _messagesHub;
         private readonly IMapper _mapper;
         private readonly INotificationRepository _notificationRepository;
@@ -35,9 +27,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
         private readonly IMessageRepository _messageRepository;
         private readonly IChatRepository _chatRepository;
         private readonly UserManager<AppUser> _userManager;
-        public ChatService(IHubContext<MessagesHub> messagesHub, IHttpContextAccessor http, IMapper mapper, INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext, IFileService fileService, ICloudinaryService cloudinaryService, IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
+        public ChatService(IHubContext<MessagesHub> messagesHub, IMapper mapper, INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext, IFileService fileService, ICloudinaryService cloudinaryService, IMessageRepository messageRepository, IChatRepository chatRepository, UserManager<AppUser> userManager)
         {
-            _currentUserName = http.HttpContext.User.Identity.Name;
             _messagesHub = messagesHub;
             _mapper = mapper;
             _notificationRepository = notificationRepository;
@@ -58,7 +49,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 throw new DontHavePermissionException("You cant get this chat!");
             var firstUser = chat.FirstUser;
             //var messages = chat.Messages.OrderByDescending(m => m.CreatedAt);
-            
+
             return new ChatGetDto
             {
                 Id = chat.Id,
@@ -73,47 +64,31 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<ChatDeleteGetDto> DeleteMessageAsync(int id, string userName)
         {
-            Message? message = await _messageRepository.GetByIdAsync(id, isTracking:true, expressionIncludes: m => m.Chat.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes:new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
+            Message? message = await _messageRepository.GetByIdAsync(id, isTracking: true,
+                                    expressionIncludes:m => m.Chat.Messages.OrderByDescending(m => m.CreatedAt).Take(2),
+                                    includes: new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
             if (message is null) throw new NotFoundException($"Message with id {id} wasnt found!");
             if (message.Sender != userName) throw new DontHavePermissionException("You cant delete this message!");
             IList<Message> chatMessages = message.Chat.Messages;
-
-            Message? lastMessage = chatMessages.FirstOrDefault();
+           
             _messageRepository.Delete(message);
-            if (lastMessage?.Id == message.Id )
-            {
-                if (message.Chat.Messages.Count > 1)
-                {
-                    message.Chat.LastMessageSendedAt = chatMessages[1].CreatedAt;
-                    message.Chat.LastMessageSendedBy = chatMessages[1].Sender;
-                    message.Chat.LastMessage = chatMessages[1].Text;
-                    message.Chat.LastMessageIsChecked = chatMessages[1].IsChecked;
-                }
-                else
-                {
-                    message.Chat.LastMessageSendedAt =  null;
-                    message.Chat.LastMessageSendedBy = null;
-                    message.Chat.LastMessage = null;
-                    message.Chat.LastMessageIsChecked = false;
-
-                }
-            }
+            bool isLastMess = message.Id == chatMessages[0].Id;
             bool isChecked = message.IsChecked;
             await _messageRepository.SaveChangesAsync();
             return new ChatDeleteGetDto
             {
                 Id = message.Chat.Id,
-                FirstUserUserName = message.Chat.FirstUser.UserName,
-                SecondUserUserName = message.Chat.SecondUser.UserName,
-                Messages = _mapper.Map<IEnumerable<MessageGetDto>>(message.Chat.Messages),
+                ChatPartnerUserName = message.Chat.SecondUser.UserName == userName ? message.Chat.FirstUser.UserName : message.Chat.SecondUser.UserName,
+                CurrentLastMessage = isLastMess ? _mapper.Map<MessageGetDto>(message.Chat.Messages[0]) : null,
                 ConnectionId = message.Chat.ConnectionId,
-                IsDeletedMessageChecked = isChecked
+                IsDeletedMessageChecked = isChecked,
+                DeletedMessageId = id,
             };
 
         }
-        public async Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId,string userName, int skip)
+        public async Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip)
         {
-            Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser","Messages.Media" });
+            Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser", "Messages.Media" });
             if (chat is null || chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
                 throw new DontHavePermissionException("You cant get this chat!");
             return _mapper.Map<IEnumerable<MessageGetDto>>(chat.Messages);
@@ -122,15 +97,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         public async Task<int> GetNewMessagesCountAsync(string userName)
         {
-            ICollection<Chat> chats = await _chatRepository.GetCollection(c => c.FirstUser.UserName == userName 
-            || c.SecondUser.UserName == userName,includes:new[] { "FirstUser", "SecondUser", "Messages" });
+            ICollection<Chat> chats = await _chatRepository.GetCollection(c => c.FirstUser.UserName == userName
+            || c.SecondUser.UserName == userName, includes: new[] { "FirstUser", "SecondUser", "Messages" });
             int count = 0;
             foreach (Chat chat in chats)
             {
                 count += chat.Messages.Where(m => m.IsChecked == false && m.Sender != userName).Count();
             }
             return count;
-                
+
         }
 
         public async Task<ICollection<ChatItemSearchGetDto>> SearchChatUsersAsync(string searchParam, string currentUsername)
@@ -142,8 +117,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .FirstOrDefaultAsync();
             if (currentUser is null) throw new AppUserNotFoundException($"User with username {currentUser} doesnt exists!");
 
-            ICollection<FollowerItem> filteredFollowers = currentUser.Followers.Where(f => 
-            f.UserName.Contains(searchParam) 
+            ICollection<FollowerItem> filteredFollowers = currentUser.Followers.Where(f =>
+            f.UserName.Contains(searchParam)
             || f.Name.ToLower().Contains(searchParam.ToLower())
             || f.Surname.ToLower().Contains(searchParam.ToLower())
             ).ToList();
@@ -187,39 +162,36 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
 
         }
-        public async Task SendAudioAsync(IFormFile file, int chatId)
+        public async Task SendAudioAsync(AudioMessagePostDto dto)
         {
-            AppUser user = await _userManager.FindByNameAsync(_currentUserName);
+            AppUser user = await _userManager.FindByNameAsync(dto.Sender);
 
-            if (user is null) throw new AppUserNotFoundException($"User with username {_currentUserName} doesnt exists!");
-            Chat? chat = await _chatRepository.GetByIdAsync(chatId, true, includes: new[] { "FirstUser", "SecondUser" });
-            if (chat is null) throw new NotFoundException($"Chat with id {chatId} doesnt exists!");
-            if (chat.FirstUser.UserName != _currentUserName && chat.SecondUser.UserName != _currentUserName)
+            if (user is null) throw new AppUserNotFoundException($"User with username {dto.Sender} doesnt exists!");
+            Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId, true, includes: new[] { "FirstUser", "SecondUser" });
+            if (chat is null) throw new NotFoundException($"Chat with id {dto.ChatId} doesnt exists!");
+            if (chat.FirstUser.UserName != dto.Sender && chat.SecondUser.UserName != dto.Sender)
                 throw new DontHavePermissionException("You cant write message to this chat!");
-            string cloudinaryUrl = await _cloudinaryService.UploadAudioAsync(file);
+            string cloudinaryUrl = await _cloudinaryService.UploadAudioAsync(dto.Audio);
             Message message = new Message
             {
                 AudioUrl = cloudinaryUrl,
-                Sender = _currentUserName,
+                Sender = dto.Sender,
                 ChatId = chat.Id,
-                
+                Type = MessageType.Audio,
+                Minutes = dto.Minutes,
+                Seconds = dto.Seconds,
+                Text = $"{dto.Minutes}:{(dto.Seconds < 10 ? $"0{dto.Seconds}" : $"{dto.Seconds}")}"
             };
-            chat.LastMessage = "Voice message";
-            chat.LastMessageSendedAt = DateTime.UtcNow;
-            chat.LastMessageSendedBy = _currentUserName;
-            chat.LastMessageIsChecked = false;
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
-            
-            MessageGetDto messageDto =  _mapper.Map<MessageGetDto>(message);
-            ICollection<ChatItemGetDto> userChatItems = await GetChatItemsAsync(chat.FirstUser.UserName);
-            ICollection<ChatItemGetDto> partnerChatItems = await GetChatItemsAsync(chat.SecondUser.UserName);
+
+            MessageGetDto messageDto = _mapper.Map<MessageGetDto>(message);
+            await _messagesHub.Clients.Group(dto.Sender).SendAsync("CheckChatAfterSendMessage", chat.ConnectionId, chat.Id,
+                                                        dto.Sender,
+                                                        (chat.FirstUser.UserName != dto.Sender ? chat.FirstUser.UserName : chat.SecondUser.UserName),
+                                                        messageDto);
 
             await _messagesHub.Clients.Group(chat.ConnectionId).SendAsync("RecieveMessage", messageDto);
-            await _messagesHub.Clients.Group(chat.FirstUser.UserName).SendAsync("GetChatItems", userChatItems);
-            await _messagesHub.Clients.Group(chat.SecondUser.UserName).SendAsync("GetChatItems", partnerChatItems);
-
-
 
         }
         public async Task<MessageGetDto> SendMessageAsync(MessagePostDto dto)
@@ -227,7 +199,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
             //if (dto.Text is null && dto.Media is null) throw new MessageValidationException("Message must have at least text or media!");
             AppUser user = await _userManager.FindByNameAsync(dto.Sender);
             if (user is null) throw new AppUserNotFoundException($"User with username {dto.Sender} doesnt exists!");
-            Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId,true, includes:new[] { "FirstUser", "SecondUser" });
+            Chat? chat = await _chatRepository.GetByIdAsync(dto.ChatId, true, includes: new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {dto.ChatId} doesnt exists!");
             if (chat.FirstUser.UserName != dto.Sender && chat.SecondUser.UserName != dto.Sender)
                 throw new DontHavePermissionException("You cant write message to this chat!");
@@ -236,14 +208,11 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Text = dto.Text,
                 Sender = dto.Sender,
                 ChatId = chat.Id,
-                CreatedAt = DateTime.UtcNow
-                
+                CreatedAt = DateTime.UtcNow,
+                Type = MessageType.Text
+
             };
-            
-            chat.LastMessage = dto.Text;
-            chat.LastMessageSendedAt = DateTime.UtcNow;
-            chat.LastMessageSendedBy = dto.Sender;
-            chat.LastMessageIsChecked = false;
+
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
             return _mapper.Map<MessageGetDto>(message);
@@ -264,8 +233,8 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 throw new DontHavePermissionException("Follow first, for send messages!");
             Chat? chat = await _chatRepository.Get(c => c.FirstUser.UserName == dto.Sender && c.SecondUser.UserName == receiver.UserName
                                                     || c.FirstUser.UserName == receiver.UserName && c.SecondUser.UserName == dto.Sender,
-                                                    isTracking:true,
-                                                    includes: new[] {"FirstUser", "SecondUser"});
+                                                    isTracking: true,
+                                                    includes: new[] { "FirstUser", "SecondUser" });
             bool isNew = false;
             if (chat is null)
             {
@@ -284,10 +253,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Sender = dto.Sender,
                 Text = dto.Text,
             };
-            chat.LastMessage = newMessage.Text;
-            chat.LastMessageSendedAt = DateTime.UtcNow;
-            chat.LastMessageSendedBy = dto.Sender;
-            chat.LastMessageIsChecked = false;
+          
             if (isNew) await _chatRepository.CreateAsync(chat);
 
             await _messageRepository.CreateAsync(newMessage);
@@ -313,52 +279,67 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<ICollection<ChatItemGetDto>> GetChatItemsAsync(string userName)
         {
             if (!await _userManager.Users.AnyAsync(u => u.UserName == userName)) throw new AppUserNotFoundException($"User with username {userName} doesnt exists!");
-            ICollection<Chat> userChats = await _chatRepository.OrderAndGet(
-                order: c => c.LastMessageSendedAt,
-                isDescending: true,
+            ICollection<Chat> userChats = await _chatRepository.GetCollection(
                 expression: c => c.FirstUser.UserName == userName
                 || c.SecondUser.UserName == userName,
                 expressionIncludes: c => c.Messages.Where(m => !m.IsChecked && m.Sender != userName),
-                includes: new[] { "FirstUser", "SecondUser" }).ToListAsync();
+                includes: new[] { "FirstUser", "SecondUser" });
 
             ICollection<ChatItemGetDto> dto = new List<ChatItemGetDto>();
             foreach (Chat chat in userChats)
             {
+                Message? lastMessage = await _messageRepository.OrderAndGet(
+                    order:m => m.Id,
+                    isDescending: true,
+                    expression:m => m.ChatId == chat.Id,
+                    limit:1).FirstOrDefaultAsync();
                 if (chat.FirstUser.UserName == userName)
                 {
-                    dto.Add(new ChatItemGetDto
+                    ChatItemGetDto item = new ChatItemGetDto
                     {
                         ChatId = chat.Id,
                         ChatPartnerUserName = chat.SecondUser.UserName,
                         ChatPartnerName = chat.SecondUser.Name,
-                        ChatPartnerSurname =chat.SecondUser.Surname,
+                        ChatPartnerSurname = chat.SecondUser.Surname,
                         ChatPartnerImageUrl = chat.SecondUser.ImageUrl,
-                        LastMessage = chat.LastMessage,
                         UnreadedMessagesCount = chat.Messages.Count,
-                        LastMessageIsChecked = chat.LastMessageIsChecked,
-                        LastMessageSendedAt = chat.LastMessageSendedAt,
-                        LastMessageSendedBy = chat.LastMessageSendedBy
-                    });
+                        
+                    };
+                    if (lastMessage is not null)
+                    {
+                        item.LastMessage = lastMessage.Text;
+                        item.LastMessageType = lastMessage.Type;
+                        item.LastMessageIsChecked = lastMessage.IsChecked;
+                        item.LastMessageSendedAt = lastMessage.CreatedAt;
+                        item.LastMessageSendedBy = lastMessage.Sender;
+                    }
+                    dto.Add(item);
                 }
                 else
                 {
-                    dto.Add(new ChatItemGetDto
+                    ChatItemGetDto item = new ChatItemGetDto
                     {
                         ChatId = chat.Id,
                         ChatPartnerUserName = chat.FirstUser.UserName,
                         ChatPartnerName = chat.FirstUser.Name,
                         ChatPartnerSurname = chat.FirstUser.Surname,
                         ChatPartnerImageUrl = chat.FirstUser.ImageUrl,
-                        LastMessage = chat.LastMessage,
                         UnreadedMessagesCount = chat.Messages.Count,
-                        LastMessageIsChecked = chat.LastMessageIsChecked,
-                        LastMessageSendedAt = chat.LastMessageSendedAt,
-                        LastMessageSendedBy = chat.LastMessageSendedBy
-                    });
+
+                    };
+                    if (lastMessage is not null)
+                    {
+                        item.LastMessage = lastMessage.Text;
+                        item.LastMessageType = lastMessage.Type;
+                        item.LastMessageIsChecked = lastMessage.IsChecked;
+                        item.LastMessageSendedAt = lastMessage.CreatedAt;
+                        item.LastMessageSendedBy = lastMessage.Sender;
+                    }
+                    dto.Add(item);
                 }
             }
 
-            return dto;
+            return dto.OrderByDescending(m => m.LastMessageSendedAt).ToList();
         }
 
         public async Task<int> GetUnreadedMessagesCountAsync(string userName)
@@ -366,11 +347,17 @@ namespace SocialaBackend.Persistence.Implementations.Services
             if (!await _userManager.Users.AnyAsync(u => u.UserName == userName))
                 throw new AppUserNotFoundException($"User with username {userName} doesnt exists!");
             int count = await _messageRepository.GetCountAsync(
-                m => !m.IsChecked && m.Sender != userName &&  (m.Chat.FirstUser.UserName == userName || m.Chat.SecondUser.UserName == userName),
-                includes:new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
+                m => !m.IsChecked && m.Sender != userName && (m.Chat.FirstUser.UserName == userName || m.Chat.SecondUser.UserName == userName),
+                includes: new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
             return count;
-                
 
+
+        }
+
+        public async Task<int> GetChatsCountAsync(string userName)
+        {
+            
+            return await _chatRepository.GetCountAsync(c => c.FirstUser.UserName == userName || c.SecondUser.UserName == userName, "SecondUser", "FirstUser");
         }
     }
 }

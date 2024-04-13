@@ -17,11 +17,6 @@ namespace SocialaBackend.Domain.Entities
         public string SecondUserId { get; set; } = null!;
         public AppUser SecondUser { get; set;} = null!;
         public IList<Message> Messages { get; set; } = new List<Message>();
-        public string? LastMessage { get; set; }
-        public DateTime? LastMessageSendedAt { get; set; }
-        public string? LastMessageSendedBy { get; set; } = null!;
-        public bool LastMessageIsMedia { get; set; }
-        public bool LastMessageIsChecked { get; set; }
         public string ConnectionId { get; set; } = null!;
 
     }
