@@ -292,6 +292,8 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             await Clients.Group(userName).SendAsync("GetChatAfterDelete", dto);
             
         }
+
+        
         public async Task AddGroupAdmin(int groupId, string userName, string addedBy)
         {
             if (groupId <= 0) return;
@@ -427,12 +429,12 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
             }
         }
 
-        public async Task CheckChatAfterSendMessage(string chatConnectionId, int chatId, string sender, string reciever, MessageGetDto sendedMessage)
+        public async Task CheckChatAfterSendMessage(string chatConnectionId, string sender, string reciever, MessageGetDto sendedMessage)
         {
             
             if (Chats.ContainsKey(chatConnectionId))
             {
-                ICollection<(string userName, int count)> usersInCurrentChat = Chats[chatConnectionId];
+                IEnumerable<(string userName, int count)> usersInCurrentChat = Chats[chatConnectionId];
                 if (usersInCurrentChat.Any(tuple => tuple.userName != sender))
                 {
                     sendedMessage.IsChecked = true;
@@ -440,20 +442,42 @@ namespace SocialaBackend.Persistence.Implementations.Hubs
                     messFromDb.IsChecked = true;
                     await _messageRepository.SaveChangesAsync();
                 }
-                ICollection<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(sender);
-                ICollection<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(reciever);
+                IEnumerable<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(sender);
+                IEnumerable<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(reciever);
                 await Clients.Group(sender).SendAsync("GetChatItems", userChatItems);
                 await Clients.Group(reciever).SendAsync("GetChatItems", partnerChatItems);
             }
         }
-    
+        public async Task CheckChatAfterUpload(string chatConnectionId, string sender, string reciever, IEnumerable<MessageGetDto> sendedMessages)
+        {
+
+            if (Chats.ContainsKey(chatConnectionId))
+            {
+                IEnumerable<(string userName, int count)> usersInCurrentChat = Chats[chatConnectionId];
+                if (usersInCurrentChat.Any(tuple => tuple.userName != sender))
+                {
+                    foreach(var mess in sendedMessages)
+                    {
+                        mess.IsChecked = true;
+                        Message messFromDb = await _messageRepository.GetByIdAsync(mess.Id, true);
+                        messFromDb.IsChecked = true;
+                        await _messageRepository.SaveChangesAsync();
+                    }
+                }
+                IEnumerable<ChatItemGetDto> userChatItems = await _chatService.GetChatItemsAsync(sender);
+                IEnumerable<ChatItemGetDto> partnerChatItems = await _chatService.GetChatItemsAsync(reciever);
+                await Clients.Group(sender).SendAsync("GetChatItems", userChatItems);
+                await Clients.Group(reciever).SendAsync("GetChatItems", partnerChatItems);
+            }
+        }
+
         public async Task SendMessageByChatId(MessagePostDto dto)
         {
             try
             {
                 ChatGetDto chat = await _chatService.GetChatByIdAsync(dto.ChatId, dto.Sender);
                 MessageGetDto sendedMessage = await _chatService.SendMessageAsync(dto);
-                await CheckChatAfterSendMessage(chat.ConnectionId, chat.Id, dto.Sender,chat.ChatPartnerUserName,  sendedMessage);
+                await CheckChatAfterSendMessage(chat.ConnectionId,dto.Sender,chat.ChatPartnerUserName,  sendedMessage);
 
            
                     

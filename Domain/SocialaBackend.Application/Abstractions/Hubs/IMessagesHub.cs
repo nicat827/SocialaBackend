@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Abstractions.Hubs
 {
-    public interface IMessagesHub : IClientProxy
+    public interface IMessagesHub
     {
-        Task CheckChatAfterSendMessage(string chatConnectionId, int chatId, string sender, MessageGetDto sendedMessage);
-        
+        Dictionary<string, ICollection<(string, int)>> Chats { get; set; }
     }
 }

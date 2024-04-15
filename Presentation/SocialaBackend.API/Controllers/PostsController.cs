@@ -144,5 +144,14 @@ namespace SocialaBackend.API.Controllers
 
         }
 
+        [HttpDelete("comment/{id}")]
+        [Authorize]
+
+        public async Task<IActionResult> DeleteComment(int id)
+        {
+            await _service.DeleteCommentAsync(id);
+            return NoContent();
+        }
+
     }
 }

@@ -69,7 +69,6 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<AppDbContextInitializer>();
 
-
         }
 
         public static void AddPersistenceConfigure(this IApplicationBuilder app)

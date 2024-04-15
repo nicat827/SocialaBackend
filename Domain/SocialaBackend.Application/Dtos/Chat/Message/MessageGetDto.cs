@@ -13,11 +13,10 @@ namespace SocialaBackend.Application.Dtos
         public DateTime? CreatedAt { get; set; }
         public string? Text { get; set; }
         public string? AudioUrl { get; set; }
-        public MessageType Type { get; set; }
-        public int? Minutes { get; set; }
-        public int? Seconds { get; set; }
-
-        //public IEnumerable<MessageMediaGetDto> Media { get; set; } = new List<MessageMediaGetDto>();
+        public int? AudioMinutes { get; set; }
+        public int? AudioSeconds { get; set; }
+        public string? SourceUrl { get; set; }
+        public FileType Type { get; set; }
         public bool IsChecked { get; set; }
         public string Sender { get; set; } = null!;
     }

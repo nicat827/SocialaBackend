@@ -24,6 +24,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip);
         Task<int> GetNewMessagesCountAsync(string userName);
 
+        Task SendMediaAsync(string userName, int chatId, ICollection<MediaMessagePostDto> medias);
         Task<int> GetChatsCountAsync(string userName);
     }
 }

@@ -19,6 +19,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace SocialaBackend.Persistence.Implementations.Services
 {
@@ -104,6 +105,15 @@ namespace SocialaBackend.Persistence.Implementations.Services
 
         }
 
+        public async Task DeleteCommentAsync(int id)
+        {
+            Comment? comment = await _commentRepository.GetByIdAsync(id, includes:new[] { "Author", "Post" });
+            if (comment is null) throw new NotFoundException($"Comment with id {id} didnt found!");
+            if (comment.Author?.UserName != _currentUserName) throw new DontHavePermissionException($"You cant delete this comment!");
+            _commentRepository.Delete(comment);
+            comment.Post.CommentsCount--;
+            await _commentRepository.SaveChangesAsync();
+        }
         public async Task<IEnumerable<PostGetDto>> GetArchivedPostsAsync(int skip)
         {
 
@@ -301,11 +311,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     .ThenInclude(p => p.Items)
                 .Include(u => u.Followers)
                 .FirstOrDefaultAsync();
-            foreach (Post post in user.Posts)
-            {
-                int count = await _replyRepository.GetCountAsync(r => r.Comment.PostId == post.Id, "Comment", "Comment.Post");
-                post.CommentsCount += count;
-            }
+          
             if (user is null) throw new AppUserNotFoundException($"User with {username} username doesnt exists!");
             if (user.IsPrivate)
             {
@@ -313,8 +319,27 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     if (!user.Followers.Any(f => f.UserName == _currentUserName && f.IsConfirmed == true))
                         throw new ForbiddenException("This account is private, follow for seeing posts!");
             }
-            ICollection<PostGetDto> dto = _mapper.Map<ICollection<PostGetDto>>(user.Posts);
-          
+            ICollection<PostGetDto> dto = new List<PostGetDto>();
+            foreach (Post post in user.Posts)
+            {
+                int count = await _replyRepository.GetCountAsync(r => r.Comment.PostId == post.Id, "Comment");
+                post.CommentsCount += count;
+                dto.Add(new PostGetDto
+                (
+                    post.Id,
+                    post.AppUser.UserName,
+                    post.AppUser.Name,
+                    post.AppUser.Surname,
+                    post.AppUser.ImageUrl,
+                    post.Description,
+                    post.CreatedAt,
+                    _mapper.Map<IEnumerable<PostItemGetDto>>(post.Items),
+                    _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments),
+                    post.CommentsCount,
+                    count,
+                    post.LikesCount
+                ));
+            }
             return dto;
 
         }
@@ -331,7 +356,29 @@ namespace SocialaBackend.Persistence.Implementations.Services
                     expressionIncludes: p=> p.Comments.Take(5),
                     includes: new[] { "Items","AppUser", "AppUser.Followers", "Comments.Author" }
                 ).ToListAsync();
-            return _mapper.Map<IEnumerable<PostGetDto>>(posts);
+
+            ICollection<PostGetDto> dto = new List<PostGetDto>();
+            foreach (Post post in posts)
+            {
+                int count = await _replyRepository.GetCountAsync(r => r.Comment.PostId == post.Id, "Comment");
+                post.CommentsCount += count;
+                dto.Add(new PostGetDto
+                (
+                    post.Id,
+                    post.AppUser.UserName,
+                    post.AppUser.Name,
+                    post.AppUser.Surname,
+                    post.AppUser.ImageUrl,
+                    post.Description,
+                    post.CreatedAt,
+                    _mapper.Map<IEnumerable<PostItemGetDto>>(post.Items),
+                    _mapper.Map<IEnumerable<CommentGetDto>>(post.Comments),
+                    post.CommentsCount,
+                    count,
+                    post.LikesCount
+                ));
+            }
+            return dto;
 
         }
 

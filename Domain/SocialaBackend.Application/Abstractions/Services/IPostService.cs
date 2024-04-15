@@ -28,5 +28,7 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<CommentGetDto> CommentAsync(CommentPostDto dto);
         Task DeletePostAsync(int id);
         Task<ReplyGetDto> ReplyCommentAsync(ReplyPostDto dto);
+
+        Task DeleteCommentAsync(int id);
     }
 }

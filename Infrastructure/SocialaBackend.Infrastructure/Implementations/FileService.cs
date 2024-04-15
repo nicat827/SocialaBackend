@@ -94,7 +94,7 @@ namespace SocialaBackend.Infrastructure.Implementations
         }
         public string GeneratePath(string fileName, params string[] folders)
         {
-            string path = _env.ContentRootPath;
+            string path = _env.WebRootPath;
             foreach (var folder in folders)
             {
                 path = Path.Combine(path, folder);

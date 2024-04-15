@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialaBackend.Application.Abstractions.Services;
+using SocialaBackend.Application.Dtos;
 using SocialaBackend.Application.Dtos.Chat.Message;
 using SocialaBackend.Application.Exceptions;
-using static System.Net.WebRequestMethods;
+using SocialaBackend.Application.Exceptions.Chat;
 
 namespace SocialaBackend.API.Controllers
 {
@@ -33,7 +34,32 @@ namespace SocialaBackend.API.Controllers
         [HttpGet("items")]
         public async Task<IActionResult> GetChatItems()
         {
+            
             return Ok(await _chatService.GetChatItemsAsync(_http.HttpContext.User.Identity.Name));
+        }
+
+        [HttpPost("media")]
+        [Authorize]
+
+        public async Task<IActionResult> UploadMedia([FromForm] int chatId, [FromForm] IList<IFormFile> mediaFiles, [FromForm] IList<string>? mediaTexts)
+        {
+            if (mediaFiles.Count == 0) throw new SendMessageException("You cant send empty message!");
+
+            // Создаем список DTO для передачи сервису
+            var mediaDtoList = new List<MediaMessagePostDto>();
+            for (int i = 0; i < mediaFiles.Count; i++)
+            {
+                var mediaDto = new MediaMessagePostDto
+                {
+                    File = mediaFiles[i],
+                    Text = mediaTexts[i] is not null ? mediaTexts[i].Trim().Count() > 0 ? mediaTexts[i] : null : null
+                };
+                mediaDtoList.Add(mediaDto);
+            }
+
+            await _chatService.SendMediaAsync(_http.HttpContext.User.Identity.Name, chatId, mediaDtoList);
+
+            return Ok();
         }
 
 

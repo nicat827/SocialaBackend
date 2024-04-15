@@ -10,14 +10,14 @@ namespace SocialaBackend.Domain.Entities
 {
     public class Message:BaseEntity
     {
-        public string? Text { get; set; } = null!;
-        public ICollection<MessageMedia> Media { get; set; } = new List<MessageMedia>();
+        public string? Text { get; set; }
         public string Sender { get; set; } = null!;
         public string? AudioUrl { get; set; }
+        public string? SourceUrl { get; set; }
         public bool IsChecked { get; set; }
-        public MessageType Type { get; set; }
-        public int? Minutes { get; set; }
-        public int? Seconds { get; set; }
+        public FileType Type { get; set; }
+        public int? AudioMinutes { get; set; }
+        public int? AudioSeconds { get; set; }
         //relational
         public int ChatId { get; set; }
         public Chat Chat { get; set; } = null!;

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialaBackend.Persistence.DAL;
 
@@ -11,9 +12,10 @@ using SocialaBackend.Persistence.DAL;
 namespace SocialaBackend.Persistence.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240415104211_MessagesTableUpdatedDeletedSecondsAndMinutesAddedSourceUrl")]
+    partial class MessagesTableUpdatedDeletedSecondsAndMinutesAddedSourceUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -520,12 +522,6 @@ namespace SocialaBackend.Persistence.DAL.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<int?>("AudioMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("AudioSeconds")
-                        .HasColumnType("int");
 
                     b.Property<string>("AudioUrl")
                         .HasColumnType("nvarchar(max)");

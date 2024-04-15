@@ -43,7 +43,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
         }
         public async Task<ChatGetDto> GetChatByIdAsync(int id, string userName)
         {
-            Chat? chat = await _chatRepository.GetByIdAsync(id, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes: new[] { "FirstUser", "SecondUser", "Messages.Media" });
+            Chat? chat = await _chatRepository.GetByIdAsync(id, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(20), includes: new[] { "FirstUser", "SecondUser" });
             if (chat is null) throw new NotFoundException($"Chat with id {id} doesnt exits!");
             if (chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
                 throw new DontHavePermissionException("You cant get this chat!");
@@ -65,13 +65,14 @@ namespace SocialaBackend.Persistence.Implementations.Services
         public async Task<ChatDeleteGetDto> DeleteMessageAsync(int id, string userName)
         {
             Message? message = await _messageRepository.GetByIdAsync(id, isTracking: true,
-                                    expressionIncludes:m => m.Chat.Messages.OrderByDescending(m => m.CreatedAt).Take(2),
+                                    expressionIncludes: m => m.Chat.Messages.OrderByDescending(m => m.CreatedAt).Take(2),
                                     includes: new[] { "Chat", "Chat.FirstUser", "Chat.SecondUser" });
             if (message is null) throw new NotFoundException($"Message with id {id} wasnt found!");
             if (message.Sender != userName) throw new DontHavePermissionException("You cant delete this message!");
             IList<Message> chatMessages = message.Chat.Messages;
-           
+
             _messageRepository.Delete(message);
+
             bool isLastMess = message.Id == chatMessages[0].Id;
             bool isChecked = message.IsChecked;
             await _messageRepository.SaveChangesAsync();
@@ -79,13 +80,49 @@ namespace SocialaBackend.Persistence.Implementations.Services
             {
                 Id = message.Chat.Id,
                 ChatPartnerUserName = message.Chat.SecondUser.UserName == userName ? message.Chat.FirstUser.UserName : message.Chat.SecondUser.UserName,
-                CurrentLastMessage = isLastMess ? _mapper.Map<MessageGetDto>(message.Chat.Messages[0]) : null,
+                CurrentLastMessage = isLastMess && chatMessages.Count > 0 ? _mapper.Map<MessageGetDto>(message.Chat.Messages[0]) : null,
                 ConnectionId = message.Chat.ConnectionId,
                 IsDeletedMessageChecked = isChecked,
                 DeletedMessageId = id,
             };
 
         }
+
+        public async Task SendMediaAsync(string userName, int chatId, ICollection<MediaMessagePostDto> medias)
+        {
+            Chat? chat = await _chatRepository.GetByIdAsync(chatId, includes: new[] {"FirstUser", "SecondUser"});
+            if (chat is null) throw new NotFoundException($"Chat with id {chatId} wasnt found!");
+            if (chat.FirstUser.UserName != userName && chat.SecondUser.UserName != userName)
+                throw new DontHavePermissionException($"You cant send message to this chat!");
+            ICollection<MessageGetDto> returnDto = new List<MessageGetDto>();
+            foreach (MediaMessagePostDto media in medias)
+            {
+                Message message = new Message
+                {
+                    
+                    Sender = userName,
+                    ChatId = chat.Id,
+                };
+                if (media.Text is not null) message.Text = media.Text;
+                _fileService.CheckFileSize(media.File, 100);
+                FileType type = _fileService.ValidateFilesForPost(media.File);
+                string localSourceUrl = await _fileService.CreateFileAsync(media.File, "uploads", "chats");
+                string cloudinarySrcUrl = await _cloudinaryService.UploadFileAsync(localSourceUrl, type, "uploads", "chats");
+                message.SourceUrl = cloudinarySrcUrl;
+                message.Type = type;
+                await _messageRepository.CreateAsync(message);
+                await _messageRepository.SaveChangesAsync();
+                returnDto.Add(_mapper.Map<MessageGetDto>(message));
+            }
+
+            await _messagesHub.Clients.Group(userName).SendAsync("CheckChatAfterUpload", chat.ConnectionId,
+                                                      userName,
+                                                      (chat.FirstUser.UserName != userName ? chat.FirstUser.UserName : chat.SecondUser.UserName),
+                                                      returnDto);
+            await _messagesHub.Clients.Group(chat.ConnectionId).SendAsync("GetChatNewMediaMessages", returnDto.Reverse());
+
+        }
+
         public async Task<IEnumerable<MessageGetDto>> GetMessagesAsync(int chatId, string userName, int skip)
         {
             Chat? chat = await _chatRepository.GetByIdAsync(chatId, expressionIncludes: c => c.Messages.OrderByDescending(m => m.CreatedAt).Skip(skip).Take(20), includes: new[] { "FirstUser", "SecondUser", "Messages.Media" });
@@ -177,16 +214,16 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 AudioUrl = cloudinaryUrl,
                 Sender = dto.Sender,
                 ChatId = chat.Id,
-                Type = MessageType.Audio,
-                Minutes = dto.Minutes,
-                Seconds = dto.Seconds,
+                Type = FileType.Audio,
+                AudioMinutes = dto.Minutes,
+                AudioSeconds = dto.Seconds,
                 Text = $"{dto.Minutes}:{(dto.Seconds < 10 ? $"0{dto.Seconds}" : $"{dto.Seconds}")}"
             };
             await _messageRepository.CreateAsync(message);
             await _messageRepository.SaveChangesAsync();
 
             MessageGetDto messageDto = _mapper.Map<MessageGetDto>(message);
-            await _messagesHub.Clients.Group(dto.Sender).SendAsync("CheckChatAfterSendMessage", chat.ConnectionId, chat.Id,
+            await _messagesHub.Clients.Group(dto.Sender).SendAsync("CheckChatAfterSendMessage", chat.ConnectionId,
                                                         dto.Sender,
                                                         (chat.FirstUser.UserName != dto.Sender ? chat.FirstUser.UserName : chat.SecondUser.UserName),
                                                         messageDto);
@@ -209,7 +246,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 Sender = dto.Sender,
                 ChatId = chat.Id,
                 CreatedAt = DateTime.UtcNow,
-                Type = MessageType.Text
+                Type = FileType.Text
 
             };
 
@@ -303,6 +340,7 @@ namespace SocialaBackend.Persistence.Implementations.Services
                         ChatPartnerSurname = chat.SecondUser.Surname,
                         ChatPartnerImageUrl = chat.SecondUser.ImageUrl,
                         UnreadedMessagesCount = chat.Messages.Count,
+                        
                         
                     };
                     if (lastMessage is not null)

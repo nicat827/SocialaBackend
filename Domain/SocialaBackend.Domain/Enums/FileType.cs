@@ -13,8 +13,9 @@ namespace SocialaBackend.Domain.Enums
 
     public enum FileType
     {
-        Image,
+        Text,
         Audio,
+        Image,
         Video
     }
 }
