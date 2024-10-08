@@ -253,7 +253,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
                 .Include(u => u.LikedAvatars)
                 .Include(u => u.Follows)
                 .Include(u => u.Followers)
-                .Include(u => u.LikedReplies)
                 .Include(u => u.LikedPosts)
                 .Include(u => u.LikedComments)
                 //.Include(u => u.WatchedStoryItems.Where(si => si.CreatedAt.AddDays(1) > DateTime.Now))
@@ -265,7 +264,6 @@ namespace SocialaBackend.Persistence.Implementations.Services
             dto.Roles = roles;
             dto.LikedPostsIds = user.LikedPosts.Select(lp => lp.PostId).ToList();
             dto.LikedCommentsIds = user.LikedComments.Select(cl => cl.CommentId).ToList();
-            dto.LikedRepliesIds = user.LikedReplies.Select(lr => lr.ReplyId).ToList();
             dto.LikedAvatarsUsernames = user.LikedAvatars.Select(la => la.UserName).ToList();
             dto.StoryId = user.Story.Id;
             dto.LastStoryPostedAt = user.Story.LastItemAddedAt;

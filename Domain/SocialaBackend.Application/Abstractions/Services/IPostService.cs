@@ -14,21 +14,20 @@ namespace SocialaBackend.Application.Abstractions.Services
         Task<ICollection<PostGetDto>> GetPostsAsync(string username);
 
         Task LikePostAsync(int id);
-        Task<IEnumerable<ReplyGetDto>> GetRepliesAsync(int id, int? skip);
 
         Task<IEnumerable<PostGetDto>> GetArchivedPostsAsync(int skip);
 
         Task<ICollection<PostLikeGetDto>> GetLikesAsync(int id, int? skip);
+        Task<CommentGetDto> AddReplyAsync(ReplyPostDto dto);
+
+        Task<IEnumerable<CommentGetDto>> GetRepliesAsync(int id, int? skip);
         Task LikeCommentAsync(int id);
-        Task LikeReplyAsync(int id);
         Task<IEnumerable<CommentGetDto>> GetCommentsAsync(int id, int? skip);
         Task RecoverPostAsync(int id);
 
         Task<IEnumerable<PostGetDto>> GetFeedPostsAsync(int skip);
         Task<CommentGetDto> CommentAsync(CommentPostDto dto);
         Task DeletePostAsync(int id);
-        Task<ReplyGetDto> ReplyCommentAsync(ReplyPostDto dto);
-
         Task DeleteCommentAsync(int id);
     }
 }

@@ -7,6 +7,7 @@ using System.Net.Mail;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using SocialaBackend.Domain.Entities;
 
 namespace SocialaBackend.Infrastructure.Implementations
 {
@@ -22,7 +23,7 @@ namespace SocialaBackend.Infrastructure.Implementations
         {
             SmtpClient smtpClient = new SmtpClient(_configuration["ApplicationEmail:Host"],
                                                    Convert.ToInt32(_configuration["ApplicationEmail:Port"]));
-            smtpClient.EnableSsl = true;
+            smtpClient.EnableSsl = false;
 
             smtpClient.Credentials = new NetworkCredential(_configuration["ApplicationEmail:Email"],
                                                            _configuration["ApplicationEmail:Password"]);
@@ -38,6 +39,8 @@ namespace SocialaBackend.Infrastructure.Implementations
             await smtpClient.SendMailAsync(mail);
 
         }
-    
+
+
+
     }
 }

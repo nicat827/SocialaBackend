@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0325EFD9-330B-4489-BF87-A1CAAB50E09A}"
+	ProjectSection(SolutionItems) = preProject
+		Domain\SocialaBackend.Application\Dtos\AppUsers\AppUserLoginDto.cs = Domain\SocialaBackend.Application\Dtos\AppUsers\AppUserLoginDto.cs
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{A59FD918-60F5-4A08-A203-6AE403C88CCE}"
 EndProject
@@ -11,15 +14,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastru
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{4A3A90CA-115B-47ED-9767-D099A59288A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialaBackend.Domain", "Domain\SocialaBackend.Domain\SocialaBackend.Domain.csproj", "{4FC604B9-E50A-414F-AA55-DCE8165DAFCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocialaBackend.Domain", "Domain\SocialaBackend.Domain\SocialaBackend.Domain.csproj", "{4FC604B9-E50A-414F-AA55-DCE8165DAFCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialaBackend.Application", "Domain\SocialaBackend.Application\SocialaBackend.Application.csproj", "{E0D0E6F2-A5D4-4950-BF04-AB497F1B449B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocialaBackend.Application", "Domain\SocialaBackend.Application\SocialaBackend.Application.csproj", "{E0D0E6F2-A5D4-4950-BF04-AB497F1B449B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialaBackend.Infrastructure", "Infrastructure\SocialaBackend.Infrastructure\SocialaBackend.Infrastructure.csproj", "{FB217006-332D-48D7-8BE0-174E97CAE1D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocialaBackend.Infrastructure", "Infrastructure\SocialaBackend.Infrastructure\SocialaBackend.Infrastructure.csproj", "{FB217006-332D-48D7-8BE0-174E97CAE1D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialaBackend.Persistence", "Infrastructure\SocialaBackend.Persistence\SocialaBackend.Persistence.csproj", "{7D6F446E-3AD5-4407-93ED-A83CEC6F82FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocialaBackend.Persistence", "Infrastructure\SocialaBackend.Persistence\SocialaBackend.Persistence.csproj", "{7D6F446E-3AD5-4407-93ED-A83CEC6F82FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialaBackend.API", "Presentation\SocialaBackend.API\SocialaBackend.API.csproj", "{22C728BD-F25B-4BC0-A0A5-3EF1E34667A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocialaBackend.API", "Presentation\SocialaBackend.API\SocialaBackend.API.csproj", "{22C728BD-F25B-4BC0-A0A5-3EF1E34667A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

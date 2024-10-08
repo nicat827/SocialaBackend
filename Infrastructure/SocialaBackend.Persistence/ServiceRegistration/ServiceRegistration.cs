@@ -32,9 +32,7 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             {
                 opt.Password.RequiredLength = 8;
                 opt.Password.RequireNonAlphanumeric = true;
-
                 opt.User.RequireUniqueEmail = true;
-
                 opt.Lockout.MaxFailedAccessAttempts = 5;
                 opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
                 opt.Lockout.AllowedForNewUsers = true;
@@ -46,7 +44,6 @@ namespace SocialaBackend.Persistence.ServiceRegistration
             //repos
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
-            services.AddScoped<IReplyRepository, ReplyRepository>();
             services.AddScoped<ILikeRepository, LikeRepository>();
             services.AddScoped<IStoryRepository, StoryRepository>();
             services.AddScoped<IStoryItemsRepository, StoryItemsRepository>();

@@ -24,7 +24,6 @@ namespace SocialaBackend.Persistence.Common
             builder.ApplyFilter<Post>();
             builder.ApplyFilter<PostLikeItem>();
             builder.ApplyFilter<CommentLikeItem>();
-            builder.ApplyFilter<Reply>();
         }
     }
 }

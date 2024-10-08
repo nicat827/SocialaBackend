@@ -88,9 +88,9 @@ namespace SocialaBackend.API.Controllers
         [Authorize]
         public async Task<IActionResult> Reply(ReplyPostDto dto)
         {
-            if (dto.Id <= 0) throw new InvalidIdException("Id cant be a negative num!");
+            if (dto.CommentId <= 0) throw new InvalidIdException("Id cant be a negative num!");
             
-            return StatusCode(StatusCodes.Status201Created, await _service.ReplyCommentAsync(dto));
+            return StatusCode(StatusCodes.Status201Created, await _service.AddReplyAsync(dto));
 
         }
 
@@ -109,7 +109,7 @@ namespace SocialaBackend.API.Controllers
         public async Task<IActionResult> LikeReply(int id)
         {
             if (id <= 0) throw new InvalidIdException("Id cant be a negative num!");
-            await _service.LikeReplyAsync(id);
+            //await _service.LikeReplyAsync(id);
             return NoContent();
 
         }

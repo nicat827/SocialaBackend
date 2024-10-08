@@ -27,6 +27,7 @@ builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
     build.WithOrigins("https://signalr-socialite-eastus-dev-001.service.signalr.net").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     build.WithOrigins("http://localhost:5173").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     build.WithOrigins("https://socialite-827.netlify.app").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    build.WithOrigins("http://sociala.nicatmdov.com/").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 }));
 
 
@@ -106,8 +107,6 @@ app.UseEndpoints(cfg =>
     cfg.MapHub<NotificationHub>("/notificationHub");
     cfg.MapHub<MessagesHub>("/messagesHub");
 });
-
-
 
 
 app.Run();

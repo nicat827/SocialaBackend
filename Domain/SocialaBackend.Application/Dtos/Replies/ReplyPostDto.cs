@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace SocialaBackend.Application.Dtos
 {
-    public record ReplyPostDto(int Id, string Text);
+    public record ReplyPostDto(int CommentId, string Text);
    
 }
