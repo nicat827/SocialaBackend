@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0325EFD9-330B-4489-BF87-A1CAAB50E09A}"
-	ProjectSection(SolutionItems) = preProject
-		Domain\SocialaBackend.Application\Dtos\AppUsers\AppUserLoginDto.cs = Domain\SocialaBackend.Application\Dtos\AppUsers\AppUserLoginDto.cs
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{A59FD918-60F5-4A08-A203-6AE403C88CCE}"
 EndProject
